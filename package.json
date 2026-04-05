@@ -1,0 +1,30 @@
+{
+  "name": "video-transcoding-pipeline",
+  "version": "1.0.0",
+  "description": "Upload a video, transcode it into multiple resolutions in the background, and get back streamable files.",
+  "main": "dist/src/bin.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/bin.ts",
+    "start": "node dist/bin.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rshdhere/video-transcoding-pipeline.git"
+  },
+  "keywords": [],
+  "author": "@rshdhere",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/rshdhere/video-transcoding-pipeline/issues"
+  },
+  "homepage": "https://github.com/rshdhere/video-transcoding-pipeline#readme",
+  "dependencies": {
+    "typescript": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "tsx": "^4.21.0"
+  }
+}
