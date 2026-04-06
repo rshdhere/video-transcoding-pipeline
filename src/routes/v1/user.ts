@@ -5,7 +5,7 @@ import { publicProcedure, router } from "@/trpc.js";
 export const userRouter = router({
   signup: publicProcedure.input(authSchema.input).mutation(async ({ input }) => {
 
-    const response = await auth.api.signUpEmail({
+    await auth.api.signUpEmail({
       body: {
         name: input.name,
         email: input.email,
@@ -13,7 +13,21 @@ export const userRouter = router({
       }
     })
 
-    return response
+    return {
+      message: "check your email to verify"
+    }
 
+  }),
+
+  login: publicProcedure.input(authSchema.input).mutation((async ({ input }) => {
+    const response = await auth.api.signInEmail({
+      body: {
+        email: input.email,
+        password: input.password
+      }
+    })
+
+    return response
   })
+  )
 })
