@@ -1,2 +1,9 @@
 export const PORT = process.env.PORT;
-
+export const AWS_REGION = process.env.AWS_REGION as string;
+export const EMAIL_QUEUE_URL = process.env.EMAIL_QUEUE_URL as string;
+export const EMAIL_AWS_ACCESS_KEY = process.env.EMAIL_AWS_ACCESS_KEY as string;
+export const RESEND_API_KEY = process.env.RESEND_API_KEY as string;
+export const BETTET_AUTH_URL = process.env.BETTET_AUTH_URL as string;
+export const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET as string;
+export const RESEND_FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS as string
+export const EMAIL_AWS_SECRET_ACCESS_KEY = process.env.EMAIL_AWS_SECRET_ACCESS_KEY as string;
