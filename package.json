@@ -4,8 +4,11 @@
   "description": "Upload a video, transcode it into multiple resolutions in the background, and get back streamable files.",
   "main": "dist/src/bin.js",
   "scripts": {
-    "build": "tsc && tsc-alias",
+    "build": "tsc && tsc-alias && npm run copy-assets",
+    "copy-assets": "cpx \"src/email/**/*.html\" dist/email",
+    "dev:worker": "tsx src/worker/email.ts",
     "dev": "tsx src/bin.ts",
+    "worker": "node dist/worker/email.js",
     "start": "node dist/bin.js"
   },
   "repository": {
@@ -21,12 +24,14 @@
   },
   "homepage": "https://github.com/rshdhere/video-transcoding-pipeline#readme",
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.1024.0",
     "@trpc/server": "^11.16.0",
     "better-auth": "^1.5.6",
     "dotenv": "^17.4.0",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "pg": "^8.20.0",
+    "resend": "^6.10.0",
     "tsc-alias": "^1.8.16",
     "zod": "^4.3.6"
   },
@@ -34,6 +39,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.2",
     "@types/pg": "^8.20.0",
+    "cpx": "^1.5.0",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
