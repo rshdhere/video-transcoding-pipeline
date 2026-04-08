@@ -1,44 +1,52 @@
 import "dotenv/config"
-import { EMAIL_QUEUE_URL } from "@/config/config.js"
+import { QUEUE_URL } from "@/config/config.js"
 import { sendMail } from "@/email/index.js"
-import { emailQueueClient } from "@/queue/index.js"
+import { QueueClient } from "@/queue/client.js"
 import {
   ReceiveMessageCommand,
   DeleteMessageCommand,
 } from "@aws-sdk/client-sqs"
 
-
 async function poll() {
-  const res = await emailQueueClient.send(
-    new ReceiveMessageCommand({
-      QueueUrl: EMAIL_QUEUE_URL,
-      WaitTimeSeconds: 20,
-    })
-  )
+  try {
+    const res = await QueueClient.send(
+      new ReceiveMessageCommand({
+        QueueUrl: QUEUE_URL,
+        MaxNumberOfMessages: 10,
+        WaitTimeSeconds: 20,
+      })
+    )
 
-  if (!res.Messages) return
+    if (res.Messages) {
+      for (const msg of res.Messages) {
+        const body = JSON.parse(msg.Body!)
 
-  for (const msg of res.Messages) {
-    const body = JSON.parse(msg.Body!)
+        try {
+          if (body.type === "VERIFY_EMAIL") {
+            await sendMail({
+              userEmail: body.userEmail,
+              verificationUrl: body.verificationUrl,
+            })
+          }
 
-    try {
-      if (body.type === "VERIFY_EMAIL") {
-        await sendMail({
-          userEmail: body.userEmail,
-          verificationUrl: body.verificationUrl,
-        })
+          await QueueClient.send(
+            new DeleteMessageCommand({
+              QueueUrl: QUEUE_URL,
+              ReceiptHandle: msg.ReceiptHandle!,
+            })
+          )
+        } catch (err) {
+          console.error("Message processing failed:", err)
+        }
       }
-
-      await emailQueueClient.send(
-        new DeleteMessageCommand({
-          QueueUrl: EMAIL_QUEUE_URL,
-          ReceiptHandle: msg.ReceiptHandle!,
-        })
-      )
-    } catch (err) {
-      console.error(err)
     }
+  } catch (err) {
+    console.error("Polling failed:", err)
   }
+
+  // small delay to avoid hammering SQS
+  setTimeout(poll, 1000)
 }
 
-setInterval(poll, 5000)
+// start
+poll()
