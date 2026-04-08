@@ -21,9 +21,10 @@ export async function sendMail({ userEmail, verificationUrl }: sendMailInput) {
     to: userEmail,
     subject: 'verify your email',
     html: html,
-
   })
+  console.log(`[resend]: email has been sent to id-${data?.id}`)
 
-  console.log("RESEND DATA:", data)
-  console.log("RESEND ERROR:", error?.message, error?.name, error?.statusCode)
+  if (error) {
+    console.error(`[resend-error]: email was not send coz of ${error?.name} which returned ${error?.message}`)
+  }
 }
