@@ -7,6 +7,7 @@
     "build": "tsc && tsc-alias && npm run copy-assets",
     "copy-assets": "cpx \"src/email/**/*.html\" dist/email",
     "dev:worker": "tsx src/worker/email.ts",
+    "studio": "cd src/drizzle && npx drizzle-kit studio",
     "dev": "tsx src/bin.ts",
     "worker": "node dist/worker/email.js",
     "start": "node dist/bin.js"
@@ -25,6 +26,7 @@
   "homepage": "https://github.com/rshdhere/video-transcoding-pipeline#readme",
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.1024.0",
+    "@smithy/node-http-handler": "^4.5.2",
     "@trpc/server": "^11.16.0",
     "better-auth": "^1.5.6",
     "dotenv": "^17.4.0",
