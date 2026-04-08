@@ -1,13 +1,16 @@
 import "dotenv/config"
+import pLimit from "p-limit"
 import { QUEUE_URL } from "@/config/config.js"
-import { sendMail } from "@/email/index.js"
 import { QueueClient } from "@/queue/client.js"
 import {
   ReceiveMessageCommand,
-  DeleteMessageCommand,
+  DeleteMessageBatchCommand,
 } from "@aws-sdk/client-sqs"
+import { handlers } from "./handler.js"
 
-async function poll() {
+const limit = pLimit(5)
+
+async function poll(): Promise<void> {
   try {
     const res = await QueueClient.send(
       new ReceiveMessageCommand({
@@ -17,36 +20,51 @@ async function poll() {
       })
     )
 
-    if (res.Messages) {
-      for (const msg of res.Messages) {
-        const body = JSON.parse(msg.Body!)
+    if (res.Messages?.length) {
+      const deleteEntries: { Id: string; ReceiptHandle: string }[] = []
 
-        try {
-          if (body.type === "VERIFY_EMAIL") {
-            await sendMail({
-              userEmail: body.userEmail,
-              verificationUrl: body.verificationUrl,
-            })
-          }
+      await Promise.all(
+        res.Messages.map((msg, index) =>
+          limit(async () => {
+            try {
+              const body = JSON.parse(msg.Body!)
 
-          await QueueClient.send(
-            new DeleteMessageCommand({
-              QueueUrl: QUEUE_URL,
-              ReceiptHandle: msg.ReceiptHandle!,
-            })
-          )
-        } catch (err) {
-          console.error("Message processing failed:", err)
-        }
+              const handler = handlers[body.type]
+              if (!handler) {
+                console.warn("unknown message type:", body.type)
+                return
+              }
+
+              await handler(body)
+
+              deleteEntries.push({
+                Id: msg.MessageId || index.toString(),
+                ReceiptHandle: msg.ReceiptHandle!,
+              })
+            } catch (err) {
+              console.error("message processing failed:", err)
+            }
+          })
+        )
+      )
+
+      // batch delete successful messages
+      if (deleteEntries.length > 0) {
+        await QueueClient.send(
+          new DeleteMessageBatchCommand({
+            QueueUrl: QUEUE_URL,
+            Entries: deleteEntries,
+          })
+        )
       }
     }
   } catch (err) {
-    console.error("Polling failed:", err)
+    console.error("polling failed:", err)
   }
 
-  // small delay to avoid hammering SQS
-  setTimeout(poll, 1000)
+  // immediately continue polling (long polling already handles wait)
+  poll()
 }
 
-// start
+// start worker
 poll()
