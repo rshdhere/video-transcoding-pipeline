@@ -1,11 +1,17 @@
 import { SendMessageCommand } from "@aws-sdk/client-sqs"
-import { emailQueueClient } from "./index.js"
-import { EMAIL_QUEUE_URL } from "@/config/config.js"
+import { QueueClient } from "./client.js"
+import { QUEUE_URL } from "@/config/config.js"
 
-export async function enqueueEmailJob(job: any) {
-  await emailQueueClient.send(
+type Job = {
+  type: "VERIFY_EMAIL",
+  userEmail: string,
+  verificationUrl: string
+}
+
+export async function enqueueEmailJob(job: Job) {
+  await QueueClient.send(
     new SendMessageCommand({
-      QueueUrl: EMAIL_QUEUE_URL,
+      QueueUrl: QUEUE_URL,
       MessageBody: JSON.stringify(job),
     })
   )
