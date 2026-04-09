@@ -12,7 +12,7 @@ type sendMailInput = {
 export async function sendMail({ userEmail, verificationUrl }: sendMailInput) {
 
   const templatePath = new URL("./email.html", import.meta.url)
-  let html = fs.readFileSync(templatePath, "utf-8")
+  let html = await fs.promises.readFile(templatePath, "utf-8")
 
   html = html.replaceAll("{{VERIFICATION_URL}}", verificationUrl)
 
