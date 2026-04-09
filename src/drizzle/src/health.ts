@@ -24,7 +24,7 @@ export const ensureDatabaseConnection = async () => {
       const delay = Math.min(1000 * 2 ** retries, 30000); // max 30s
 
       console.error(
-        `database connection failed (attempt ${retries}/${MAX_RETRIES}) → retrying in ${delay}ms`
+        `database connection failed (attempt ${retries}/${MAX_RETRIES}) → retrying in ${delay / 1000}second(s)`
       );
 
       if (retries >= MAX_RETRIES) {
