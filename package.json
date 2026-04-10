@@ -4,13 +4,15 @@
   "description": "Upload a video, transcode it into multiple resolutions in the background, and get back streamable files.",
   "main": "dist/src/bin.js",
   "scripts": {
-    "build": "tsc && tsc-alias && npm run copy-assets",
-    "copy-assets": "cpx \"src/email/**/*.html\" dist/email",
+    "dev": "tsx src/bin.ts",
+    "integration-test": "vitest run",
+    "db:migrate": "npx drizzle-kit push",
     "dev:worker": "tsx src/worker/email.ts",
     "studio": "cd src/drizzle && npx drizzle-kit studio",
-    "dev": "tsx src/bin.ts",
+    "start": "node dist/bin.js",
     "worker": "node dist/worker/email.js",
-    "start": "node dist/bin.js"
+    "build": "tsc && tsc-alias && npm run copy-assets",
+    "copy-assets": "cpx \"src/email/**/*.html\" dist/email"
   },
   "repository": {
     "type": "git",
@@ -42,9 +44,12 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.2",
     "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.0",
     "cpx": "^1.5.0",
     "drizzle-kit": "^0.31.10",
+    "supertest": "^7.2.2",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
   }
 }
