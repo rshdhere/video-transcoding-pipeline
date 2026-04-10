@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/bin.ts",
     "integration-test": "vitest run",
-    "db:migrate": "npx drizzle-kit push",
+    "db:push": "cd src/drizzle && npx drizzle-kit push",
     "dev:worker": "tsx src/worker/email.ts",
     "studio": "cd src/drizzle && npx drizzle-kit studio",
     "start": "node dist/bin.js",
