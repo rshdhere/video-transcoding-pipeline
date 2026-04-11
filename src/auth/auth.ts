@@ -4,6 +4,7 @@ import { enqueueEmailJob } from "@/queue/enqueue.js";
 import * as schema from "../drizzle/src/database/schema.js";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
+  BACKEND_URL,
   FRONTEND_URL,
   OAUTH_GITHUB_CLIENT_ID,
   OAUTH_GITHUB_CLIENT_SECRET,
@@ -13,7 +14,7 @@ import {
 
 export const auth = betterAuth({
   trustedOrigins: [FRONTEND_URL],
-  baseURL: "http://localhost:8080",
+  baseURL: BACKEND_URL,
   database: drizzleAdapter((dbClient), {
     schema,
     provider: "pg"
