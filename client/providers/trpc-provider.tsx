@@ -1,5 +1,6 @@
 "use client"
 
+import { BACKEND_URL } from "@/config";
 import React, { useState } from "react";
 import { TRPCProvider } from "@/utils/trpc";
 import { AppRouter } from "../../src/router";
@@ -15,7 +16,7 @@ export function TRPCProviders(
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: 'http://localhost:8080',
+          url: BACKEND_URL!,
         }),
       ],
     }),
