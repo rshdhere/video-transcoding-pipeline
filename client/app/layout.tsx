@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google"
+import { TRPCProviders } from "../providers/trpc-provider"
 
 export const metadata: Metadata = {
   title: "Video Transcoding Pipeline",
@@ -24,7 +25,13 @@ export default function RootLayout({
       lang="en"
       className={`${inter.className} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <TRPCProviders>
+          <main>
+            {children}
+          </main>
+        </TRPCProviders>
+      </body>
     </html>
   );
 }
