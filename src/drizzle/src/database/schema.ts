@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, pgEnum, integer, jsonb } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -91,3 +91,27 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const statusEnum = pgEnum("status", ["uploaded", "processing", "ready", "failed"])
+
+export const video = pgTable(
+  "video", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  title: text("title"),
+  desciption: text("description").notNull(),
+  thumbnailUrl: text("thumbnail_url").notNull(),
+  playbackUrl: text("playback_url"),
+  uploadUrl: text("upload_url"),
+  key: text("key"),
+  status: statusEnum(),
+  size: integer("size"),
+  duration: integer("duration"), // seconds
+  outputs: jsonb("outputs"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updateAt: timestamp("updated_at").$onUpdate(() => new Date()).notNull()
+}, (table) => [
+  index("video_userId_idx").on(table.userId),
+  index("video_status_idx").on(table.status),
+]
+)

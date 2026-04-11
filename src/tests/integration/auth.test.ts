@@ -2,6 +2,9 @@ import 'dotenv/config';
 import request from "supertest";
 import { app } from '@/router.js';
 import { describe, expect, test } from "vitest";
+import { dbClient } from '@/drizzle/src/index.js';
+import { user } from '@/drizzle/src/database/schema.js';
+import { eq } from 'drizzle-orm';
 
 describe('authentication', () => {
   test('user should be able to sign-up', async () => {
@@ -54,6 +57,29 @@ describe('authentication', () => {
       });
 
       expect(response.statusCode).toBe(403)
+    }),
+    test('login only succeeds after email verification', async () => {
+      const name = `roronoa${Math.random()}`
+      const email = `roronoa${Math.random()}@onepiece.com`
+      const password = 'Santoriyu<3'
+
+      await request(app).post('/trpc/v1.user.signup').send({
+        name, email, password
+      })
+
+      await dbClient.update(user).set({
+        emailVerified: true
+      }).where(eq(user.email, email));
+
+      const response = await request(app).post('/trpc/v1.user.login').send({
+        name, email, password
+      });
+
+      const token = response.body.result.data.token
+
+      expect(response.statusCode).toBe(200)
+      expect(token).toBeDefined()
+      console.log(token)
     }),
     test('should not break on an SQL-injection attempt', async () => {
 
