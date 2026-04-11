@@ -1,9 +1,14 @@
 export const PORT = process.env.PORT;
-export const AWS_REGION = process.env.AWS_REGION as string;
 export const QUEUE_URL = process.env.QUEUE_URL as string;
+export const AWS_REGION = process.env.AWS_REGION as string;
+export const FRONTEND_URL = process.env.FRONTEND_URL as string;
 export const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY as string;
 export const RESEND_API_KEY = process.env.RESEND_API_KEY as string;
 export const BETTET_AUTH_URL = process.env.BETTET_AUTH_URL as string;
 export const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET as string;
 export const RESEND_FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS as string
 export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY as string;
+export const OAUTH_GITHUB_CLIENT_ID = process.env.OAUTH_GITHUB_CLIENT_ID as string;
+export const OAUTH_GOOGLE_CLIENT_ID = process.env.OAUTH_GOOGLE_CLIENT_ID as string;
+export const OAUTH_GITHUB_CLIENT_SECRET = process.env.OAUTH_GITHUB_CLIENT_SECRET as string;
+export const OAUTH_GOOGLE_CLIENT_SECRET = process.env.OAUTH_GOOGLE_CLIENT_SECRET as string;
