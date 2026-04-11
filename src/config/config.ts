@@ -1,6 +1,7 @@
 export const PORT = process.env.PORT;
 export const QUEUE_URL = process.env.QUEUE_URL as string;
 export const AWS_REGION = process.env.AWS_REGION as string;
+export const BACKEND_URL = process.env.BACKEND_URL as string;
 export const FRONTEND_URL = process.env.FRONTEND_URL as string;
 export const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY as string;
 export const RESEND_API_KEY = process.env.RESEND_API_KEY as string;
