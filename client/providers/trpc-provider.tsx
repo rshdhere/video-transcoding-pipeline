@@ -3,7 +3,7 @@
 import { BACKEND_URL } from "@/config";
 import React, { useState } from "react";
 import { TRPCProvider } from "@/utils/trpc";
-import { AppRouter } from "../../src/router";
+import type { AppRouter } from "../../src/router.js";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -11,12 +11,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 export function TRPCProviders(
   { children }: { children: React.ReactNode }
 ) {
+  const trpcUrl = new URL("/trpc", BACKEND_URL).toString()
   const [queryClient] = useState(() => new QueryClient())
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: BACKEND_URL!,
+          url: trpcUrl,
         }),
       ],
     }),

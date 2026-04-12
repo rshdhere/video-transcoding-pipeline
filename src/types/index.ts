@@ -39,3 +39,20 @@ export const authSchema = {
     .strict(),
 
 };
+
+export const getUploadURLTypes = {
+  input: z
+    .object({
+      title: z.string(),
+      description: z.string(),
+      fileName: z.string(),
+      fileType: z.string(),
+    })
+    .strict(),
+  output: z
+    .object({
+      presignedUrl: z.string(),
+      key: z.string()
+    })
+    .strict()
+}

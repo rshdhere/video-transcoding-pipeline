@@ -6,6 +6,7 @@ export const FRONTEND_URL = process.env.FRONTEND_URL as string;
 export const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY as string;
 export const RESEND_API_KEY = process.env.RESEND_API_KEY as string;
 export const BETTET_AUTH_URL = process.env.BETTET_AUTH_URL as string;
+export const AWS_BUCKET_NAME = process.env.AWS_BUCKET_NAME as string;
 export const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET as string;
 export const RESEND_FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS as string
 export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY as string;
