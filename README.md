@@ -1,7 +1,3 @@
-# Video Transcoding Pipeline
-
-This repository is now a Bun-based Turborepo workspace for the video transcoding pipeline project. The monorepo was scaffolded with `bunx create-turbo@latest . --package-manager bun` and keeps the original architecture artifact at the root for project-level documentation.
-
 ## Architecture
 
 ![Video transcoding pipeline architecture](docs/video_transcoding_pipeline_architecture.svg)
