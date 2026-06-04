@@ -1,12 +1,10 @@
 {
   "name": "@vtp/api-v2",
-  "module": "index.ts",
-  "type": "module",
+  "version": "0.1.0",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+  "scripts": {
+    "dev": "go run ./cmd/api",
+    "build": "go build -o bin/api ./cmd/api",
+    "test": "go test ./..."
   }
 }
