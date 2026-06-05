@@ -9,3 +9,13 @@ export function createDb(connectionString: string) {
 }
 
 export type Database = ReturnType<typeof createDb>;
+
+export async function verifyDbConnection(connectionString: string) {
+  const client = postgres(connectionString, { max: 1, prepare: false });
+
+  try {
+    await client`SELECT 1`;
+  } finally {
+    await client.end();
+  }
+}

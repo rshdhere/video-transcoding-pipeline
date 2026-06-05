@@ -1,16 +1,17 @@
 {
   "name": "@vtp/server",
-  "module": "src/index.ts",
+  "module": "src/bin.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --hot src/index.ts",
-    "start": "bun src/index.ts",
+    "dev": "bun --hot src/bin.ts",
+    "start": "bun src/bin.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@vtp/api-v1": "workspace:*",
-    "@vtp/config": "workspace:*"
+    "@vtp/config": "workspace:*",
+    "@vtp/drizzle": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest",

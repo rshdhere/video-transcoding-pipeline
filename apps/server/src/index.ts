@@ -1,6 +1,6 @@
-import { startServer } from "@vtp/api-v1";
-import { loadConfig } from "@vtp/config";
+import { run } from "./bin.ts";
 
-const config = loadConfig();
-
-startServer(config);
+run().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});

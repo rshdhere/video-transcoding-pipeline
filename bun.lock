@@ -14,6 +14,7 @@
       "dependencies": {
         "@vtp/api-v1": "workspace:*",
         "@vtp/config": "workspace:*",
+        "@vtp/drizzle": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "latest",
