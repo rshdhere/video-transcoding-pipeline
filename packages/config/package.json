@@ -1,12 +1,19 @@
 {
   "name": "@vtp/config",
-  "module": "index.ts",
   "type": "module",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "exports": {
+    ".": "./src/index.ts"
   },
-  "peerDependencies": {
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vtp/validators": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@vtp/typescript-config": "workspace:*",
     "typescript": "^5"
   }
 }
