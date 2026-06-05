@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vtp-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: vtp
+      POSTGRES_PASSWORD: vtp
+      POSTGRES_DB: vtp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vtp -d vtp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  localstack:
+    image: localstack/localstack:4.4.0
+    container_name: vtp-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,sqs
+      DEBUG: 0
+      PERSISTENCE: 1
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./localstack/init:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health | grep -q '\"s3\": \"available\"'"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  localstack_data:
