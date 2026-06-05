@@ -6,6 +6,8 @@ import { testConfig } from "../setup.ts";
 const { app } = createApp(testConfig);
 const origin = testConfig.BETTER_AUTH_URL;
 
+export type TestAgent = ReturnType<typeof request.agent>;
+
 export function uniqueEmail() {
   return `rshd-${Math.random()}@example.com`;
 }
@@ -39,6 +41,10 @@ export async function createAuthenticatedSession(
     password,
     token: signInResponse.body.token as string,
   };
+}
+
+export async function createSecondAuthenticatedSession() {
+  return createAuthenticatedSession();
 }
 
 export { app, origin };

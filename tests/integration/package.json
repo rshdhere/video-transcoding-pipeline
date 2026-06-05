@@ -9,7 +9,10 @@
   },
   "dependencies": {
     "@vtp/api-v1": "workspace:*",
-    "@vtp/config": "workspace:*"
+    "@vtp/config": "workspace:*",
+    "@vtp/drizzle": "workspace:*",
+    "@vtp/handlers": "workspace:*",
+    "drizzle-orm": "^0.44.5"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -104,7 +104,9 @@
         "@vtp/config": "workspace:*",
         "@vtp/drizzle": "workspace:*",
         "@vtp/mail": "workspace:*",
+        "@vtp/validators": "workspace:*",
         "better-auth": "^1.3.7",
+        "drizzle-orm": "^0.44.5",
         "express": "^4.21.2",
       },
       "devDependencies": {
@@ -185,6 +187,9 @@
       "dependencies": {
         "@vtp/api-v1": "workspace:*",
         "@vtp/config": "workspace:*",
+        "@vtp/drizzle": "workspace:*",
+        "@vtp/handlers": "workspace:*",
+        "drizzle-orm": "^0.44.5",
       },
       "devDependencies": {
         "@types/bun": "latest",

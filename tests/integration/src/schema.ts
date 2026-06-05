@@ -1,6 +1,10 @@
 import { testConfig } from "./setup.ts";
 
-export const TRANSCODING_RESOLUTIONS = testConfig.TRANSCODING_RESOLUTIONS;
+export const TRANSCODING_RESOLUTIONS = [
+  "480p",
+  "720p",
+  "1080p",
+] as const satisfies readonly string[];
 
 export type TranscodingResolution = (typeof TRANSCODING_RESOLUTIONS)[number];
 
