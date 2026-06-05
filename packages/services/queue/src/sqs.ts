@@ -55,7 +55,7 @@ export async function receiveJobMessage(
       QueueUrl: queueUrl,
       MaxNumberOfMessages: 1,
       WaitTimeSeconds: waitTimeSeconds,
-      VisibilityTimeout: 30,
+      VisibilityTimeout: 900,
     }),
   );
 

@@ -61,7 +61,7 @@ func newClient(cfg config.Config, queueURL string) (*Client, error) {
 	return &Client{
 		sqs:        client,
 		queueURL:   queueURL,
-		visibility: 30,
+		visibility: 900,
 	}, nil
 }
 
