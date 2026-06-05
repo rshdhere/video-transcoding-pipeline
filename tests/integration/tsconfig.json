@@ -1,5 +1,5 @@
 {
   "extends": "@vtp/typescript-config/node.json",
-  "include": ["**/*.ts"],
+  "include": ["src/**/*.ts", "vitest.config.ts"],
   "exclude": ["node_modules"]
 }

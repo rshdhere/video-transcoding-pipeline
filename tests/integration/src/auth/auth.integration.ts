@@ -1,15 +1,7 @@
-import { createApp } from "@vtp/api-v1";
 import request from "supertest";
 import { describe, expect, test } from "vitest";
 
-import { testConfig } from "./setup.ts";
-
-const { app } = createApp(testConfig);
-const origin = testConfig.BETTER_AUTH_URL;
-
-function uniqueEmail() {
-  return `rshd-${Math.random()}@example.com`;
-}
+import { app, origin, uniqueEmail } from "../helpers/auth.ts";
 
 describe("Authentication", () => {
   test("user should be able to sign-up only once", async () => {

@@ -15,6 +15,7 @@
     "@types/bun": "latest",
     "@types/supertest": "^6.0.3",
     "@vtp/typescript-config": "workspace:*",
+    "dotenv": "^17.2.3",
     "supertest": "^7.1.4",
     "typescript": "^5",
     "vitest": "^3.2.4"

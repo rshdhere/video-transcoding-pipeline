@@ -11,6 +11,7 @@
   "dependencies": {
     "@vtp/config": "workspace:*",
     "@vtp/drizzle": "workspace:*",
+    "@vtp/mail": "workspace:*",
     "better-auth": "^1.3.7",
     "express": "^4.21.2"
   },
