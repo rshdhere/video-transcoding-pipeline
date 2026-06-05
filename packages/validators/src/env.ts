@@ -20,7 +20,7 @@ export const envSchema = z
     RESEND_API_KEY: z.string().optional(),
     RESEND_FROM_EMAIL: z
       .email()
-      .default("onboarding@resend.dev"),
+      .default("noreply@mail.raashed.cloud"),
     MAIL_ENABLED: z
       .string()
       .default("true")

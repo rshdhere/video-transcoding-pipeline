@@ -16,7 +16,7 @@ export const testConfig = loadConfig({
     "http://localhost:3000,http://localhost:3001",
   RESEND_API_KEY: process.env.RESEND_API_KEY ?? "re_test_key",
   RESEND_FROM_EMAIL:
-    process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev",
+    process.env.RESEND_FROM_EMAIL ?? "noreply@mail.raashed.cloud",
   MAIL_ENABLED: process.env.MAIL_ENABLED ?? "false",
   REQUIRE_EMAIL_VERIFICATION:
     process.env.REQUIRE_EMAIL_VERIFICATION ?? "false",
