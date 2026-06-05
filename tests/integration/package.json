@@ -1,12 +1,22 @@
 {
   "name": "@vtp/integration",
-  "module": "index.ts",
   "type": "module",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check-types": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "dependencies": {
+    "@vtp/api-v1": "workspace:*",
+    "@vtp/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/supertest": "^6.0.3",
+    "@vtp/typescript-config": "workspace:*",
+    "supertest": "^7.1.4",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
