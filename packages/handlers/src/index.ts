@@ -11,4 +11,5 @@ export {
   createWorkerProcessHandler,
   createWorkerShutdownHandler,
 } from "./worker.ts";
+export { resetAwsClients } from "./aws-clients.ts";
 export { resetWorkerRuntime } from "./services/worker-runtime.ts";

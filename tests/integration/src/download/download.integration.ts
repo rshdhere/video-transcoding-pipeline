@@ -1,4 +1,4 @@
-import { resetWorkerRuntime } from "@vtp/handlers";
+import { resetAwsClients, resetWorkerRuntime } from "@vtp/handlers";
 import request from "supertest";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 
@@ -56,6 +56,7 @@ describe("download tests", () => {
 
   beforeEach(async () => {
     await resetPipelineTables();
+    resetAwsClients();
     resetWorkerRuntime();
   });
 

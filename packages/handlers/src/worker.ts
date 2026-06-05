@@ -81,6 +81,7 @@ export function createWorkerProcessHandler(auth: Auth, config: Config) {
       try {
         const result = await processEmailVerificationJob(
           getDb(config),
+          config,
           poll.workerId,
         );
         res.status(200).json(result);

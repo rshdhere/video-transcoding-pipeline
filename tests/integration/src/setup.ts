@@ -20,10 +20,14 @@ export const testConfig = loadConfig({
   MAIL_ENABLED: process.env.MAIL_ENABLED ?? "false",
   REQUIRE_EMAIL_VERIFICATION:
     process.env.REQUIRE_EMAIL_VERIFICATION ?? "false",
+  AWS_ENABLED: process.env.AWS_ENABLED ?? "false",
   AWS_REGION: process.env.AWS_REGION ?? "us-east-1",
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ?? "test-access-key",
   AWS_SECRET_ACCESS_KEY:
     process.env.AWS_SECRET_ACCESS_KEY ?? "test-secret-key",
+  S3_ENDPOINT: process.env.S3_ENDPOINT,
+  S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE ?? "false",
+  SQS_ENDPOINT: process.env.SQS_ENDPOINT,
   S3_UPLOAD_BUCKET: process.env.S3_UPLOAD_BUCKET ?? "vtp-uploads",
   S3_TRANSCODED_BUCKET:
     process.env.S3_TRANSCODED_BUCKET ?? "vtp-transcoded",

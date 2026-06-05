@@ -1,15 +1,21 @@
-# aws
+# @vtp/aws
 
-To install dependencies:
+AWS S3 helpers for the video transcoding pipeline.
 
-```bash
-bun install
+## Features
+
+- S3 client factory with optional LocalStack endpoint support
+- Presigned PUT URLs for raw video uploads
+- Presigned GET URLs for transcoded video downloads
+
+## Usage
+
+```ts
+import {
+  createDownloadPresignedUrl,
+  createS3Client,
+  createUploadPresignedUrl,
+} from "@vtp/aws";
 ```
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.3. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+Set `AWS_ENABLED=true` in the server environment to activate presigned URLs in the API layer.

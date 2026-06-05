@@ -29,11 +29,31 @@ export const envSchema = z
       .string()
       .default("false")
       .transform((value) => value === "true"),
+    AWS_ENABLED: z
+      .string()
+      .default("false")
+      .transform((value) => value === "true"),
     AWS_REGION: z.string().default("us-east-1"),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
+    S3_ENDPOINT: z.string().url().optional(),
+    S3_FORCE_PATH_STYLE: z
+      .string()
+      .default("false")
+      .transform((value) => value === "true"),
     S3_UPLOAD_BUCKET: z.string().default("vtp-uploads"),
     S3_TRANSCODED_BUCKET: z.string().default("vtp-transcoded"),
+    UPLOAD_PRESIGNED_URL_EXPIRES_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(3600),
+    DOWNLOAD_PRESIGNED_URL_EXPIRES_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(3600),
+    SQS_ENDPOINT: z.string().url().optional(),
     SQS_TRANSCODING_QUEUE_URL: z.string().optional(),
     SQS_EMAIL_VERIFICATION_QUEUE_URL: z.string().optional(),
     TRANSCODING_RESOLUTIONS: z
@@ -53,6 +73,21 @@ export const envSchema = z
     {
       message: "RESEND_API_KEY is required when MAIL_ENABLED is true",
       path: ["RESEND_API_KEY"],
+    },
+  )
+  .refine(
+    (env) =>
+      !env.AWS_ENABLED ||
+      Boolean(
+        env.AWS_ACCESS_KEY_ID?.length &&
+          env.AWS_SECRET_ACCESS_KEY?.length &&
+          env.SQS_TRANSCODING_QUEUE_URL?.length &&
+          env.SQS_EMAIL_VERIFICATION_QUEUE_URL?.length,
+      ),
+    {
+      message:
+        "AWS credentials and SQS queue URLs are required when AWS_ENABLED is true",
+      path: ["AWS_ENABLED"],
     },
   );
 

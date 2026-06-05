@@ -3,7 +3,7 @@ import { createDb, type Database } from "@vtp/drizzle";
 
 let db: Database | undefined;
 
-export function getDb(config: Config) {
+export function getDb(config: Config): Database {
   if (!db) {
     db = createDb(config.DATABASE_URL);
   }

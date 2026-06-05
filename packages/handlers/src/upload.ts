@@ -8,7 +8,8 @@ import {
   createRequireSession,
   type AuthenticatedRequest,
 } from "./middleware/session.ts";
-import { createVideoUpload, PipelineError } from "./services/pipeline.ts";
+import { handlePipelineError } from "./errors.ts";
+import { createVideoUpload } from "./services/pipeline.ts";
 
 export function createUploadHandler(auth: Auth, config: Config) {
   const requireSession = createRequireSession(auth);
@@ -41,13 +42,4 @@ export function createUploadHandler(auth: Auth, config: Config) {
       }
     },
   ];
-}
-
-function handlePipelineError(res: Response, error: unknown) {
-  if (error instanceof PipelineError) {
-    res.status(error.status).json({ error: error.message, code: error.code });
-    return;
-  }
-
-  throw error;
 }

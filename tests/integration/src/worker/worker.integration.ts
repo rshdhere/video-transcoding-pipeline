@@ -1,5 +1,5 @@
 import { backgroundJobs } from "@vtp/drizzle";
-import { resetWorkerRuntime } from "@vtp/handlers";
+import { resetAwsClients, resetWorkerRuntime } from "@vtp/handlers";
 import { eq } from "drizzle-orm";
 import request from "supertest";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
@@ -25,6 +25,7 @@ describe("worker tests", () => {
 
   beforeEach(async () => {
     await resetPipelineTables();
+    resetAwsClients();
     resetWorkerRuntime();
   });
 

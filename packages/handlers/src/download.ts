@@ -10,10 +10,10 @@ import {
   createRequireSession,
   type AuthenticatedRequest,
 } from "./middleware/session.ts";
+import { handlePipelineError } from "./errors.ts";
 import {
   createVideoDownload,
   listVideoVariants,
-  PipelineError,
 } from "./services/pipeline.ts";
 
 export function createDownloadHandler(auth: Auth, config: Config) {
@@ -85,13 +85,4 @@ export function createVideoVariantsHandler(auth: Auth, config: Config) {
       }
     },
   ];
-}
-
-function handlePipelineError(res: Response, error: unknown) {
-  if (error instanceof PipelineError) {
-    res.status(error.status).json({ error: error.message, code: error.code });
-    return;
-  }
-
-  throw error;
 }

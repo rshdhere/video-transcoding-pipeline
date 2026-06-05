@@ -9,7 +9,8 @@ import {
   createRequireSession,
   type AuthenticatedRequest,
 } from "./middleware/session.ts";
-import { PipelineError, popBackgroundJob, pushBackgroundJob } from "./services/pipeline.ts";
+import { handlePipelineError } from "./errors.ts";
+import { popBackgroundJob, pushBackgroundJob } from "./services/pipeline.ts";
 
 export function createQueuePushHandler(auth: Auth, config: Config) {
   const optionalSession = createOptionalSession(auth);
@@ -80,6 +81,7 @@ export function createQueuePopHandler(auth: Auth, config: Config) {
           const { session } = req as AuthenticatedRequest;
           const job = await popBackgroundJob(
             getDb(config),
+            config,
             parsed.data.type,
             session.user.id,
             session.user.id,
@@ -103,13 +105,4 @@ export function createQueuePopHandler(auth: Auth, config: Config) {
       });
     },
   ];
-}
-
-function handlePipelineError(res: Response, error: unknown) {
-  if (error instanceof PipelineError) {
-    res.status(error.status).json({ error: error.message, code: error.code });
-    return;
-  }
-
-  throw error;
 }

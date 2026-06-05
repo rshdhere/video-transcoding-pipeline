@@ -13,6 +13,15 @@ import type {
 } from "@vtp/validators";
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
+import {
+  ackSqsJob,
+  dequeueSqsJob,
+  enqueueSqsJob,
+  nackSqsJob,
+  resolveDownloadUrl,
+  resolveUploadUrl,
+} from "../aws-clients.ts";
+
 export class PipelineError extends Error {
   constructor(
     public readonly code: string,
@@ -26,6 +35,7 @@ export class PipelineError extends Error {
 const ACTIVE_UPLOAD_STATUSES = ["uploaded", "processing"] as const;
 const QUEUE_RATE_LIMIT_PER_MINUTE = 20;
 const DOWNLOAD_BURST_LIMIT = 30;
+const SQS_POP_ATTEMPTS = 5;
 
 type JobType = "transcoding" | "email_verification";
 
@@ -104,9 +114,16 @@ export async function createVideoUpload(
     userId,
   });
 
+  const uploadUrl = await resolveUploadUrl(
+    config,
+    config.S3_UPLOAD_BUCKET,
+    uploadKey,
+    input.mimeType,
+  );
+
   return {
     video,
-    uploadUrl: `s3://${config.S3_UPLOAD_BUCKET}/${uploadKey}`,
+    uploadUrl,
   };
 }
 
@@ -161,7 +178,11 @@ export async function createVideoDownload(
       return {
         download: existing,
         variant,
-        downloadUrl: buildDownloadUrl(variant.s3Bucket, variant.s3Key),
+        downloadUrl: await resolveDownloadUrl(
+          config,
+          variant.s3Bucket,
+          variant.s3Key,
+        ),
         deduplicated: true,
       };
     }
@@ -226,7 +247,11 @@ export async function createVideoDownload(
   return {
     download,
     variant,
-    downloadUrl: buildDownloadUrl(variant.s3Bucket, variant.s3Key),
+    downloadUrl: await resolveDownloadUrl(
+      config,
+      variant.s3Bucket,
+      variant.s3Key,
+    ),
     deduplicated: false,
   };
 }
@@ -285,15 +310,165 @@ export async function pushBackgroundJob(
       userId: input.userId,
       videoId: input.videoId,
       payload: input.payload,
-      sqsMessageId: crypto.randomUUID(),
       status: "queued",
     })
     .returning();
+
+  if (!job) {
+    throw new PipelineError("QUEUE_PUSH_FAILED", 500, "Failed to enqueue job");
+  }
+
+  if (config.AWS_ENABLED) {
+    const sqsMessage = await enqueueSqsJob(config, {
+      jobId: job.id,
+      type: input.type,
+      userId: input.userId,
+      videoId: input.videoId,
+      payload: input.payload,
+    });
+
+    const [updatedJob] = await db
+      .update(backgroundJobs)
+      .set({
+        sqsMessageId: sqsMessage.messageId,
+        updatedAt: new Date(),
+      })
+      .where(eq(backgroundJobs.id, job.id))
+      .returning();
+
+    return updatedJob ?? job;
+  }
 
   return job;
 }
 
 export async function popBackgroundJob(
+  db: Database,
+  config: Config,
+  type: JobType,
+  workerId: string,
+  userId?: string,
+) {
+  if (config.AWS_ENABLED) {
+    return popBackgroundJobFromSqs(db, config, type, workerId, userId);
+  }
+
+  return popBackgroundJobFromDb(db, type, workerId, userId);
+}
+
+export async function completeBackgroundJob(
+  db: Database,
+  config: Config,
+  jobId: string,
+) {
+  const [existingJob] = await db
+    .select()
+    .from(backgroundJobs)
+    .where(eq(backgroundJobs.id, jobId))
+    .limit(1);
+
+  if (!existingJob) {
+    return null;
+  }
+
+  if (config.AWS_ENABLED && existingJob.receiptHandle) {
+    await ackSqsJob(config, existingJob.type, existingJob.receiptHandle);
+  }
+
+  const [job] = await db
+    .update(backgroundJobs)
+    .set({
+      status: "completed",
+      completedAt: new Date(),
+      receiptHandle: null,
+      lockedAt: null,
+      lockedBy: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(backgroundJobs.id, jobId))
+    .returning();
+
+  return job;
+}
+
+export async function processTranscodingJob(
+  db: Database,
+  config: Config,
+  workerUserId: string,
+) {
+  const job = await popBackgroundJob(
+    db,
+    config,
+    "transcoding",
+    workerUserId,
+    workerUserId,
+  );
+
+  if (!job?.videoId) {
+    return { processed: false as const, job: null };
+  }
+
+  for (const resolution of config.TRANSCODING_RESOLUTIONS) {
+    await db
+      .insert(videoVariants)
+      .values({
+        videoId: job.videoId,
+        resolution: resolution as "480p" | "720p" | "1080p",
+        s3Bucket: config.S3_TRANSCODED_BUCKET,
+        s3Key: `transcoded/${job.videoId}/${resolution}.mp4`,
+        mimeType: "video/mp4",
+        fileSizeBytes: 1_000_000,
+        status: "ready",
+      })
+      .onConflictDoUpdate({
+        target: [videoVariants.videoId, videoVariants.resolution],
+        set: {
+          status: "ready",
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  await db
+    .update(videos)
+    .set({ status: "completed", updatedAt: new Date() })
+    .where(eq(videos.id, job.videoId));
+
+  const completedJob = await completeBackgroundJob(db, config, job.id);
+
+  return { processed: true as const, job: completedJob };
+}
+
+export async function processEmailVerificationJob(
+  db: Database,
+  config: Config,
+  workerId: string,
+) {
+  const job = await popBackgroundJob(
+    db,
+    config,
+    "email_verification",
+    workerId,
+  );
+
+  if (!job) {
+    return { processed: false as const, job: null };
+  }
+
+  const completedJob = await completeBackgroundJob(db, config, job.id);
+
+  return { processed: true as const, job: completedJob };
+}
+
+export async function listVideoVariants(db: Database, videoId: string) {
+  return db
+    .select()
+    .from(videoVariants)
+    .where(eq(videoVariants.videoId, videoId))
+    .orderBy(asc(videoVariants.resolution));
+}
+
+async function popBackgroundJobFromDb(
   db: Database,
   type: JobType,
   workerId: string,
@@ -337,96 +512,52 @@ export async function popBackgroundJob(
   });
 }
 
-export async function completeBackgroundJob(
-  db: Database,
-  jobId: string,
-) {
-  const [job] = await db
-    .update(backgroundJobs)
-    .set({
-      status: "completed",
-      completedAt: new Date(),
-      receiptHandle: null,
-      lockedAt: null,
-      lockedBy: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(backgroundJobs.id, jobId))
-    .returning();
-
-  return job;
-}
-
-export async function processTranscodingJob(
+async function popBackgroundJobFromSqs(
   db: Database,
   config: Config,
-  workerUserId: string,
-) {
-  const job = await popBackgroundJob(
-    db,
-    "transcoding",
-    workerUserId,
-    workerUserId,
-  );
-
-  if (!job?.videoId) {
-    return { processed: false as const, job: null };
-  }
-
-  for (const resolution of config.TRANSCODING_RESOLUTIONS) {
-    await db
-      .insert(videoVariants)
-      .values({
-        videoId: job.videoId,
-        resolution: resolution as "480p" | "720p" | "1080p",
-        s3Bucket: config.S3_TRANSCODED_BUCKET,
-        s3Key: `transcoded/${job.videoId}/${resolution}.mp4`,
-        mimeType: "video/mp4",
-        fileSizeBytes: 1_000_000,
-        status: "ready",
-      })
-      .onConflictDoUpdate({
-        target: [videoVariants.videoId, videoVariants.resolution],
-        set: {
-          status: "ready",
-          updatedAt: new Date(),
-        },
-      });
-  }
-
-  await db
-    .update(videos)
-    .set({ status: "completed", updatedAt: new Date() })
-    .where(eq(videos.id, job.videoId));
-
-  const completedJob = await completeBackgroundJob(db, job.id);
-
-  return { processed: true as const, job: completedJob };
-}
-
-export async function processEmailVerificationJob(
-  db: Database,
+  type: JobType,
   workerId: string,
+  userId?: string,
 ) {
-  const job = await popBackgroundJob(db, "email_verification", workerId);
+  for (let attempt = 0; attempt < SQS_POP_ATTEMPTS; attempt += 1) {
+    const message = await dequeueSqsJob(config, type);
 
-  if (!job) {
-    return { processed: false as const, job: null };
+    if (!message) {
+      return null;
+    }
+
+    const [job] = await db
+      .select()
+      .from(backgroundJobs)
+      .where(eq(backgroundJobs.id, message.body.jobId))
+      .limit(1);
+
+    if (!job || job.status !== "queued") {
+      await ackSqsJob(config, type, message.receiptHandle);
+      continue;
+    }
+
+    if (type === "transcoding" && userId && job.userId !== userId) {
+      await nackSqsJob(config, type, message.receiptHandle);
+      continue;
+    }
+
+    const [updated] = await db
+      .update(backgroundJobs)
+      .set({
+        status: "processing",
+        lockedAt: new Date(),
+        lockedBy: workerId,
+        attempts: job.attempts + 1,
+        sqsMessageId: message.messageId,
+        receiptHandle: message.receiptHandle,
+        updatedAt: new Date(),
+      })
+      .where(eq(backgroundJobs.id, job.id))
+      .returning();
+
+    return updated ?? null;
   }
 
-  const completedJob = await completeBackgroundJob(db, job.id);
-
-  return { processed: true as const, job: completedJob };
-}
-
-export async function listVideoVariants(db: Database, videoId: string) {
-  return db
-    .select()
-    .from(videoVariants)
-    .where(eq(videoVariants.videoId, videoId))
-    .orderBy(asc(videoVariants.resolution));
-}
-
-function buildDownloadUrl(bucket: string, key: string) {
-  return `https://${bucket}.s3.amazonaws.com/${key}`;
+  return null;
 }
