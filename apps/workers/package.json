@@ -1,12 +1,10 @@
 {
-  "name": "workers",
-  "module": "index.ts",
-  "type": "module",
+  "name": "@vtp/workers",
+  "version": "0.1.0",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+  "scripts": {
+    "dev": "go run ./cmd/worker",
+    "build": "go build -o bin/worker ./cmd/worker",
+    "test": "go test ./..."
   }
 }

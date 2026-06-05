@@ -1,3 +1,8 @@
+# Go
+bin/
+*.exe
+*.test
+
 # dependencies (bun install)
 node_modules
 

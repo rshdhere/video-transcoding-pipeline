@@ -5,7 +5,8 @@
 ## Workspace
 
 - `apps/web`: starter Next.js application
-- `apps/docs`: starter Next.js documentation application
+- `apps/workers`: background workers (Go) — transcode and email
+- `apps/server`: starter Bun server application
 - `packages/ui`: shared React UI package
 - `packages/eslint-config`: shared ESLint configuration
 - `packages/typescript-config`: shared TypeScript configuration

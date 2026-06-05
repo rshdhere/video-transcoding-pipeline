@@ -1,15 +1,26 @@
-# workers
+# Workers (Go)
 
-To install dependencies:
+Background workers for the video transcoding pipeline, implemented in Go.
 
-```bash
-bun install
-```
-
-To run:
+## Run
 
 ```bash
-bun run index.ts
+# from repo root
+bun run dev --filter=@vtp/workers
+
+# or from this directory
+go run ./cmd/worker
 ```
 
-This project was created using `bun init` in bun v1.2.3. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WORKERS_TRANSCODE_ENABLED` | `true` | Enable the transcode worker |
+| `WORKERS_EMAIL_ENABLED` | `true` | Enable the email worker |
+
+## Build
+
+```bash
+go build -o bin/worker ./cmd/worker
+```
