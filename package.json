@@ -7,7 +7,9 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "test:integration": "turbo run test --filter=@vtp/integration"
+    "test:integration": "turbo run test --filter=@vtp/integration",
+    "db:generate": "turbo run db:generate --filter=@vtp/drizzle",
+    "db:migrate": "turbo run db:migrate --filter=@vtp/drizzle"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

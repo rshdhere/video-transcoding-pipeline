@@ -7,7 +7,8 @@
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "bun src/migrate.ts",
+    "db:migrate:kit": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "check-types": "tsc --noEmit"
   },
@@ -17,8 +18,10 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/pg": "^8.20.0",
     "@vtp/typescript-config": "workspace:*",
     "drizzle-kit": "^0.31.4",
+    "pg": "^8.21.0",
     "typescript": "^5"
   }
 }

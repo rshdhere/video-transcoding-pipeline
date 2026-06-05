@@ -17,6 +17,12 @@
       "cache": false,
       "persistent": true
     },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
     "test": {
       "dependsOn": ["^build"],
       "cache": false
