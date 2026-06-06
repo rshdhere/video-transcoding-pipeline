@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --filter=@vtp/server --filter=@vtp/workers --filter=web",
+    "dev": "bun run db:migrate && turbo run dev --filter=@vtp/server --filter=@vtp/workers --filter=web",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",

@@ -23,6 +23,7 @@ bun run start --filter=@vtp/server
 | ALL | `/api/v1/auth/*` | Public | Better Auth (sign-up, sign-in, sign-out, session) |
 | GET | `/health` | Public | Liveness check |
 | GET | `/api/v1/me` | Session | Current user and session |
+| GET | `/api/v1/videos` | Session | List videos for the current user |
 | POST | `/api/v1/videos/upload` | Session | Create upload and enqueue transcoding |
 | POST | `/api/v1/videos/:videoId/download` | Session | Download a transcoded variant |
 | GET | `/api/v1/videos/:videoId/variants` | Session | List variants for an owned video |

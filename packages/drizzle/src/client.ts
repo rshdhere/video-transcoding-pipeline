@@ -19,3 +19,26 @@ export async function verifyDbConnection(connectionString: string) {
     await client.end();
   }
 }
+
+export async function verifyDbSchema(connectionString: string) {
+  const client = postgres(connectionString, { max: 1, prepare: false });
+
+  try {
+    const [result] = await client<{ exists: boolean }[]>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'user'
+      ) AS exists
+    `;
+
+    if (!result?.exists) {
+      throw new Error(
+        'Database schema is missing. Run "bun run db:migrate" from the repo root.',
+      );
+    }
+  } finally {
+    await client.end();
+  }
+}

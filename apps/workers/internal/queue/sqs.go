@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/rshdhere/video-transcoding-pipeline/apps/workers/internal/awscfg"
 	"github.com/rshdhere/video-transcoding-pipeline/apps/workers/internal/config"
 	"github.com/rshdhere/video-transcoding-pipeline/apps/workers/internal/job"
 )
@@ -37,17 +36,7 @@ func newClient(cfg config.Config, queueURL string) (*Client, error) {
 		return nil, fmt.Errorf("queue url is required")
 	}
 
-	awsCfg, err := awsconfig.LoadDefaultConfig(
-		context.Background(),
-		awsconfig.WithRegion(cfg.AWSRegion),
-		awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(
-				cfg.AWSAccessKeyID,
-				cfg.AWSSecretAccessKey,
-				"",
-			),
-		),
-	)
+	awsCfg, err := awscfg.Load(context.Background(), cfg)
 	if err != nil {
 		return nil, fmt.Errorf("load aws config: %w", err)
 	}

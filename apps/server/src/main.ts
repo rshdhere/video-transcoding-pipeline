@@ -1,6 +1,6 @@
 import { startServer } from "@vtp/api-v1";
 import { loadConfig } from "@vtp/config";
-import { verifyDbConnection } from "@vtp/drizzle";
+import { verifyDbConnection, verifyDbSchema } from "@vtp/drizzle";
 
 export function main() {
   void bootstrap().catch((error) => {
@@ -13,6 +13,7 @@ async function bootstrap() {
   const config = loadConfig();
 
   await verifyDbConnection(config.DATABASE_URL);
+  await verifyDbSchema(config.DATABASE_URL);
 
   startServer(config);
 }

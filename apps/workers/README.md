@@ -19,7 +19,7 @@ bun run dev --filter=@vtp/workers
 go run ./cmd/worker
 ```
 
-Copy `.env.example` values into your shell or a local `.env` file before starting the workers alongside LocalStack and Postgres.
+Copy `.env.example` to `.env` in this directory before starting the workers alongside LocalStack and Postgres. The worker loads `.env` automatically on startup.
 
 ## Configuration
 

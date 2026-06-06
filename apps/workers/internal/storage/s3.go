@@ -2,15 +2,16 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go"
 
+	"github.com/rshdhere/video-transcoding-pipeline/apps/workers/internal/awscfg"
 	"github.com/rshdhere/video-transcoding-pipeline/apps/workers/internal/config"
 )
 
@@ -21,17 +22,7 @@ type Client struct {
 }
 
 func New(cfg config.Config) (*Client, error) {
-	awsCfg, err := awsconfig.LoadDefaultConfig(
-		context.Background(),
-		awsconfig.WithRegion(cfg.AWSRegion),
-		awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(
-				cfg.AWSAccessKeyID,
-				cfg.AWSSecretAccessKey,
-				"",
-			),
-		),
-	)
+	awsCfg, err := awscfg.Load(context.Background(), cfg)
 	if err != nil {
 		return nil, fmt.Errorf("load aws config: %w", err)
 	}
@@ -48,6 +39,22 @@ func New(cfg config.Config) (*Client, error) {
 		down:   manager.NewDownloader(client),
 		upload: manager.NewUploader(client),
 	}, nil
+}
+
+func (c *Client) ObjectExists(ctx context.Context, bucket, key string) (bool, error) {
+	_, err := c.s3.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: &bucket,
+		Key:    &key,
+	})
+	if err == nil {
+		return true, nil
+	}
+
+	if isS3NotFound(err) {
+		return false, nil
+	}
+
+	return false, err
 }
 
 func (c *Client) Download(ctx context.Context, bucket, key, destinationPath string) error {
@@ -84,6 +91,47 @@ func (c *Client) Upload(ctx context.Context, bucket, key, sourcePath, contentTyp
 	})
 
 	return err
+}
+
+func isS3NotFound(err error) bool {
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		switch apiErr.ErrorCode() {
+		case "NotFound", "NoSuchKey", "404":
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *Client) ListKeys(ctx context.Context, bucket, prefix string) ([]string, error) {
+	var keys []string
+	var continuation *string
+
+	for {
+		output, err := c.s3.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+			Bucket:            &bucket,
+			Prefix:            &prefix,
+			ContinuationToken: continuation,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, object := range output.Contents {
+			if object.Key != nil {
+				keys = append(keys, *object.Key)
+			}
+		}
+
+		if output.IsTruncated == nil || !*output.IsTruncated {
+			break
+		}
+		continuation = output.NextContinuationToken
+	}
+
+	return keys, nil
 }
 
 func FileSize(path string) (int64, error) {

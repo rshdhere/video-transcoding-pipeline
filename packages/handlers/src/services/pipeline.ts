@@ -107,12 +107,14 @@ export async function createVideoUpload(
     );
   }
 
-  await pushBackgroundJob(db, config, {
-    type: "transcoding",
-    payload: { videoId: video.id, s3Key: uploadKey },
-    videoId: video.id,
-    userId,
-  });
+  if (!config.AWS_ENABLED) {
+    await pushBackgroundJob(db, config, {
+      type: "transcoding",
+      payload: { videoId: video.id, s3Key: uploadKey },
+      videoId: video.id,
+      userId,
+    });
+  }
 
   const uploadUrl = await resolveUploadUrl(
     config,
@@ -125,6 +127,79 @@ export async function createVideoUpload(
     video,
     uploadUrl,
   };
+}
+
+export async function confirmVideoUpload(
+  db: Database,
+  config: Config,
+  userId: string,
+  videoId: string,
+) {
+  const [video] = await db
+    .select()
+    .from(videos)
+    .where(eq(videos.id, videoId))
+    .limit(1);
+
+  if (!video) {
+    throw new PipelineError("VIDEO_NOT_FOUND", 404, "Video not found");
+  }
+
+  if (video.userId !== userId) {
+    throw new PipelineError("FORBIDDEN", 403, "You cannot confirm this upload");
+  }
+
+  if (video.status !== "uploaded") {
+    throw new PipelineError(
+      "UPLOAD_ALREADY_CONFIRMED",
+      409,
+      "Upload has already been confirmed or processing has started",
+    );
+  }
+
+  const [existingJob] = await db
+    .select()
+    .from(backgroundJobs)
+    .where(
+      and(
+        eq(backgroundJobs.videoId, videoId),
+        inArray(backgroundJobs.status, ["queued", "processing"]),
+      ),
+    )
+    .limit(1);
+
+  if (existingJob) {
+    return { video, job: existingJob };
+  }
+
+  const job = await pushBackgroundJob(db, config, {
+    type: "transcoding",
+    payload: { videoId: video.id, s3Key: video.s3Key },
+    videoId: video.id,
+    userId,
+  });
+
+  for (const resolution of config.TRANSCODING_RESOLUTIONS) {
+    await db
+      .insert(videoVariants)
+      .values({
+        videoId: video.id,
+        resolution: resolution as "480p" | "720p" | "1080p",
+        s3Bucket: config.S3_TRANSCODED_BUCKET,
+        s3Key: `transcoded/${video.id}/${resolution}.mp4`,
+        mimeType: "video/mp4",
+        status: "processing",
+      })
+      .onConflictDoUpdate({
+        target: [videoVariants.videoId, videoVariants.resolution],
+        set: {
+          status: "processing",
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  return { video, job };
 }
 
 export async function createVideoDownload(

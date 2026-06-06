@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	config.LoadEnvFiles()
 	cfg := config.Load()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

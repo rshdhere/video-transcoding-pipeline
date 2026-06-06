@@ -42,14 +42,22 @@ export function createAuth(config: Config) {
       schema: authSchema,
     }),
     emailVerification: {
-      sendOnSignUp: true,
-      sendOnSignIn: true,
+      sendOnSignUp: config.MAIL_ENABLED,
+      sendOnSignIn: config.MAIL_ENABLED,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        await mailer.sendVerificationEmail({
-          to: user.email,
-          url,
-        });
+        try {
+          await mailer.sendVerificationEmail({
+            to: user.email,
+            url,
+          });
+        } catch (error) {
+          if (config.REQUIRE_EMAIL_VERIFICATION) {
+            throw error;
+          }
+
+          console.error("Failed to send verification email:", error);
+        }
       },
     },
     emailAndPassword: {

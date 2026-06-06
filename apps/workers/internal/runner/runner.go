@@ -42,40 +42,57 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
+	workersStarted := 0
 
 	if r.cfg.TranscodeEnabled {
-		transcodeQueue, err := queue.NewTranscodeClient(r.cfg)
-		if err != nil {
-			return fmt.Errorf("create transcode queue client: %w", err)
-		}
+		if r.cfg.SQSTranscodeURL == "" {
+			log.Println("transcode worker skipped: SQS_TRANSCODING_QUEUE_URL is not set")
+		} else {
+			transcodeQueue, err := queue.NewTranscodeClient(r.cfg)
+			if err != nil {
+				return fmt.Errorf("create transcode queue client: %w", err)
+			}
 
-		s3Client, err := storage.New(r.cfg)
-		if err != nil {
-			return fmt.Errorf("create s3 client: %w", err)
-		}
+			s3Client, err := storage.New(r.cfg)
+			if err != nil {
+				return fmt.Errorf("create s3 client: %w", err)
+			}
 
-		worker := transcodeworker.NewWorker(r.cfg, db, transcodeQueue, s3Client)
-		group.Go(func() error {
-			return worker.Run(ctx)
-		})
+			worker := transcodeworker.NewWorker(r.cfg, db, transcodeQueue, s3Client)
+			workersStarted++
+			group.Go(func() error {
+				return worker.Run(ctx)
+			})
+		}
 	}
 
 	if r.cfg.EmailEnabled {
-		emailQueue, err := queue.NewEmailClient(r.cfg)
-		if err != nil {
-			return fmt.Errorf("create email queue client: %w", err)
+		if r.cfg.SQSEmailURL == "" {
+			log.Println("email worker skipped: SQS_EMAIL_VERIFICATION_QUEUE_URL is not set")
+		} else {
+			emailQueue, err := queue.NewEmailClient(r.cfg)
+			if err != nil {
+				return fmt.Errorf("create email queue client: %w", err)
+			}
+
+			sender := emailworker.NewSender(
+				r.cfg.ResendAPIKey,
+				r.cfg.ResendFrom,
+				r.cfg.MailEnabled,
+			)
+
+			worker := emailworker.NewWorker(r.cfg, db, emailQueue, sender)
+			workersStarted++
+			group.Go(func() error {
+				return worker.Run(ctx)
+			})
 		}
+	}
 
-		sender := emailworker.NewSender(
-			r.cfg.ResendAPIKey,
-			r.cfg.ResendFrom,
-			r.cfg.MailEnabled,
-		)
-
-		worker := emailworker.NewWorker(r.cfg, db, emailQueue, sender)
-		group.Go(func() error {
-			return worker.Run(ctx)
-		})
+	if workersStarted == 0 {
+		log.Println("no workers enabled")
+		<-ctx.Done()
+		return ctx.Err()
 	}
 
 	return group.Wait()
