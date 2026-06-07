@@ -1,6 +1,7 @@
 import {
   createConfirmUploadHandler,
   createDownloadHandler,
+  createImportYouTubeHandler,
   createListVideosHandler,
   createUploadHandler,
   createVideoVariantsHandler,
@@ -14,6 +15,7 @@ export function registerVideoRoutes(app: Express, deps: RouteDeps) {
 
   app.get("/api/v1/videos", ...createListVideosHandler(auth, config));
   app.post("/api/v1/videos/upload", ...createUploadHandler(auth, config));
+  app.post("/api/v1/videos/import", ...createImportYouTubeHandler(auth, config));
   app.post(
     "/api/v1/videos/:videoId/confirm-upload",
     ...createConfirmUploadHandler(auth, config),

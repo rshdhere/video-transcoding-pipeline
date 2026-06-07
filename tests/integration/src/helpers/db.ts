@@ -74,12 +74,13 @@ export async function seedReadyVideo(userId: string, label: string) {
   }
 
   for (const resolution of TRANSCODING_RESOLUTIONS) {
+    const extension = resolution === "mp3" ? "mp3" : "mp4";
     await db.insert(videoVariants).values({
       videoId: video.id,
       resolution,
       s3Bucket: testConfig.S3_TRANSCODED_BUCKET,
-      s3Key: `seed/${video.id}/${resolution}.mp4`,
-      mimeType: "video/mp4",
+      s3Key: `seed/${video.id}/${resolution}.${extension}`,
+      mimeType: resolution === "mp3" ? "audio/mpeg" : "video/mp4",
       fileSizeBytes: 1_000_000,
       status: "ready",
     });

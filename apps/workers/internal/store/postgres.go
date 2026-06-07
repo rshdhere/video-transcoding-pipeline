@@ -118,7 +118,7 @@ func (s *Postgres) FailJob(ctx context.Context, jobID string, message string) er
 
 func (s *Postgres) GetVideo(ctx context.Context, videoID string) (*job.Video, error) {
 	row := s.pool.QueryRow(ctx, `
-		SELECT id, user_id, s3_bucket, s3_key, mime_type, status
+		SELECT id, user_id, s3_bucket, s3_key, mime_type, source_type, source_url, status
 		FROM videos
 		WHERE id = $1
 	`, videoID)
@@ -130,12 +130,32 @@ func (s *Postgres) GetVideo(ctx context.Context, videoID string) (*job.Video, er
 		&video.S3Bucket,
 		&video.S3Key,
 		&video.MimeType,
+		&video.SourceType,
+		&video.SourceURL,
 		&video.Status,
 	); err != nil {
 		return nil, err
 	}
 
 	return &video, nil
+}
+
+func (s *Postgres) UpdateVideoAfterDownload(
+	ctx context.Context,
+	videoID string,
+	fileName string,
+	fileSize int64,
+) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE videos
+		SET
+			original_file_name = $2,
+			file_size_bytes = $3,
+			updated_at = NOW()
+		WHERE id = $1
+	`, videoID, fileName, fileSize)
+
+	return err
 }
 
 func (s *Postgres) UpdateVideoStatus(ctx context.Context, videoID string, status string) error {

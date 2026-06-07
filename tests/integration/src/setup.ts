@@ -38,7 +38,7 @@ export const testConfig = loadConfig({
     process.env.SQS_EMAIL_VERIFICATION_QUEUE_URL ??
     "http://localhost:4566/000000000000/vtp-email-verification",
   TRANSCODING_RESOLUTIONS:
-    process.env.TRANSCODING_RESOLUTIONS ?? "480p,720p,1080p",
+    process.env.TRANSCODING_RESOLUTIONS ?? "480p,720p,1080p,2160p,mp3",
   MAX_DAILY_DOWNLOADS: process.env.MAX_DAILY_DOWNLOADS ?? "10",
   UPLOAD_COOLDOWN_SECONDS: process.env.UPLOAD_COOLDOWN_SECONDS ?? "30",
 });

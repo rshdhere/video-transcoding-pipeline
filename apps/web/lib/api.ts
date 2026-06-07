@@ -48,6 +48,13 @@ export async function confirmVideoUpload(videoId: string) {
   );
 }
 
+export async function importYouTubeVideo(url: string) {
+  return apiFetch<{ video: Video }>("/api/v1/videos/import", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}
+
 export async function getVideoVariants(videoId: string) {
   return apiFetch<{ variants: VideoVariant[] }>(
     `/api/v1/videos/${videoId}/variants`,

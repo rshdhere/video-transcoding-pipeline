@@ -16,7 +16,7 @@ func TestLoadUsesDefaults(t *testing.T) {
 		t.Fatalf("expected email worker to be enabled")
 	}
 
-	if len(cfg.TranscodingResolutions) != 3 {
+	if len(cfg.TranscodingResolutions) != 5 {
 		t.Fatalf("expected default resolutions, got %#v", cfg.TranscodingResolutions)
 	}
 }

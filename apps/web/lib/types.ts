@@ -2,7 +2,7 @@ export type VideoStatus = "uploaded" | "processing" | "completed" | "failed";
 
 export type VariantStatus = "pending" | "processing" | "ready" | "failed";
 
-export type Resolution = "480p" | "720p" | "1080p";
+export type Resolution = "480p" | "720p" | "1080p" | "2160p" | "mp3";
 
 export type Video = {
   id: string;
@@ -12,6 +12,8 @@ export type Video = {
   s3Bucket: string;
   s3Key: string;
   fileSizeBytes: number;
+  sourceType: "upload" | "youtube";
+  sourceUrl: string | null;
   status: VideoStatus;
   createdAt: string;
   updatedAt: string;
@@ -23,7 +25,7 @@ export type VideoVariant = {
   resolution: Resolution;
   s3Bucket: string;
   s3Key: string;
-  mimeType: "video/mp4" | "video/webm";
+  mimeType: "video/mp4" | "video/webm" | "audio/mpeg";
   fileSizeBytes: number | null;
   status: VariantStatus;
   createdAt: string;

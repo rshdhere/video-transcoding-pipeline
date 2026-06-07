@@ -58,7 +58,7 @@ export const envSchema = z
     SQS_EMAIL_VERIFICATION_QUEUE_URL: z.string().optional(),
     TRANSCODING_RESOLUTIONS: z
       .string()
-      .default("480p,720p,1080p")
+      .default("480p,720p,1080p,2160p,mp3")
       .transform((value) =>
         value
           .split(",")

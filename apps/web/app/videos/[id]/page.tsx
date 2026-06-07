@@ -7,7 +7,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import { getVideoVariants, listVideos } from "@/lib/api";
 import type { Video, VideoVariant } from "@/lib/types";
 import { AuthGuard } from "@/components/auth-guard";
-import { VariantDownloadButtons } from "@/components/variant-download-buttons";
+import { VariantPlayers } from "@/components/variant-players";
 import { VideoStatusBadge } from "@/components/video-status-badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -129,11 +129,12 @@ export default function VideoDetailPage({
               <CardHeader>
                 <CardTitle>Transcoded variants</CardTitle>
                 <CardDescription>
-                  Download 480p, 720p, or 1080p outputs once they are ready.
+                  Watch 480p through 4K outputs inline, or play and download the
+                  MP3 audio extract once they are ready.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <VariantDownloadButtons videoId={video.id} variants={variants} />
+                <VariantPlayers videoId={video.id} variants={variants} />
               </CardContent>
             </Card>
           </>

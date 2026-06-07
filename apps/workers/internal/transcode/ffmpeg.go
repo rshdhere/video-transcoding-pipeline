@@ -11,6 +11,7 @@ var resolutionHeights = map[string]int{
 	"480p":  480,
 	"720p":  720,
 	"1080p": 1080,
+	"2160p": 2160,
 }
 
 func Transcode(ctx context.Context, ffmpegPath, inputPath, outputPath, resolution string) error {
@@ -27,6 +28,25 @@ func Transcode(ctx context.Context, ffmpegPath, inputPath, outputPath, resolutio
 		"-preset", "fast",
 		"-c:a", "aac",
 		"-movflags", "+faststart",
+		outputPath,
+	}
+
+	cmd := exec.CommandContext(ctx, ffmpegPath, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ffmpeg failed: %w (%s)", err, strings.TrimSpace(string(output)))
+	}
+
+	return nil
+}
+
+func ExtractAudio(ctx context.Context, ffmpegPath, inputPath, outputPath string) error {
+	args := []string{
+		"-y",
+		"-i", inputPath,
+		"-vn",
+		"-c:a", "libmp3lame",
+		"-q:a", "2",
 		outputPath,
 	}
 

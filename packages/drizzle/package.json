@@ -6,10 +6,11 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "db:generate": "drizzle-kit generate",
+    "db:generate": "bun --env-file=../../apps/server/.env x drizzle-kit generate",
     "db:migrate": "bun src/migrate.ts",
-    "db:migrate:kit": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
+    "db:migrate:kit": "bun --env-file=../../apps/server/.env x drizzle-kit migrate",
+    "db:push": "bun --env-file=../../apps/server/.env x drizzle-kit push",
+    "db:studio": "bun --env-file=../../apps/server/.env x drizzle-kit studio",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

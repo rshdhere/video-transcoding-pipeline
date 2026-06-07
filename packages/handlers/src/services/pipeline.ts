@@ -8,7 +8,9 @@ import {
 } from "@vtp/drizzle";
 import type {
   DownloadVideoInput,
+  ImportYouTubeVideoInput,
   QueuePushInput,
+  TranscodingResolution,
   UploadVideoInput,
 } from "@vtp/validators";
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
@@ -39,11 +41,39 @@ const SQS_POP_ATTEMPTS = 5;
 
 type JobType = "transcoding" | "email_verification";
 
-export async function createVideoUpload(
+function variantMimeType(
+  resolution: string,
+): "video/mp4" | "audio/mpeg" {
+  return resolution === "mp3" ? "audio/mpeg" : "video/mp4";
+}
+
+function variantS3Key(videoId: string, resolution: string): string {
+  const extension = resolution === "mp3" ? "mp3" : "mp4";
+  return `transcoded/${videoId}/${resolution}.${extension}`;
+}
+
+function extractYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?(?:.*&)?v=)([\w-]{11})/,
+    /(?:youtube\.com\/shorts\/)([\w-]{11})/,
+    /(?:youtube\.com\/embed\/)([\w-]{11})/,
+    /(?:youtu\.be\/)([\w-]{11})/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+async function assertUploadAllowed(
   db: Database,
   config: Config,
   userId: string,
-  input: UploadVideoInput,
 ) {
   const cooldownSince = new Date(
     Date.now() - config.UPLOAD_COOLDOWN_SECONDS * 1000,
@@ -83,6 +113,41 @@ export async function createVideoUpload(
       "Concurrent video uploads are not allowed",
     );
   }
+}
+
+async function createTranscodingVariants(
+  db: Database,
+  config: Config,
+  videoId: string,
+) {
+  for (const resolution of config.TRANSCODING_RESOLUTIONS) {
+    await db
+      .insert(videoVariants)
+      .values({
+        videoId,
+        resolution: resolution as TranscodingResolution,
+        s3Bucket: config.S3_TRANSCODED_BUCKET,
+        s3Key: variantS3Key(videoId, resolution),
+        mimeType: variantMimeType(resolution),
+        status: "processing",
+      })
+      .onConflictDoUpdate({
+        target: [videoVariants.videoId, videoVariants.resolution],
+        set: {
+          status: "processing",
+          updatedAt: new Date(),
+        },
+      });
+  }
+}
+
+export async function createVideoUpload(
+  db: Database,
+  config: Config,
+  userId: string,
+  input: UploadVideoInput,
+) {
+  await assertUploadAllowed(db, config, userId);
 
   const uploadKey = `uploads/${userId}/${crypto.randomUUID()}/${input.fileName}`;
 
@@ -127,6 +192,65 @@ export async function createVideoUpload(
     video,
     uploadUrl,
   };
+}
+
+export async function createYouTubeImport(
+  db: Database,
+  config: Config,
+  userId: string,
+  input: ImportYouTubeVideoInput,
+) {
+  await assertUploadAllowed(db, config, userId);
+
+  const videoId = extractYouTubeVideoId(input.url);
+  if (!videoId) {
+    throw new PipelineError(
+      "INVALID_YOUTUBE_URL",
+      400,
+      "Could not extract a YouTube video ID from the URL",
+    );
+  }
+
+  const uploadKey = `uploads/${userId}/${crypto.randomUUID()}/source.mp4`;
+
+  const [video] = await db
+    .insert(videos)
+    .values({
+      userId,
+      originalFileName: `youtube-${videoId}.mp4`,
+      mimeType: "video/mp4",
+      s3Bucket: config.S3_UPLOAD_BUCKET,
+      s3Key: uploadKey,
+      fileSizeBytes: 0,
+      sourceType: "youtube",
+      sourceUrl: input.url,
+      status: "processing",
+    })
+    .returning();
+
+  if (!video) {
+    throw new PipelineError(
+      "IMPORT_FAILED",
+      500,
+      "Failed to persist YouTube import",
+    );
+  }
+
+  await createTranscodingVariants(db, config, video.id);
+
+  await pushBackgroundJob(db, config, {
+    type: "transcoding",
+    payload: {
+      videoId: video.id,
+      s3Key: uploadKey,
+      sourceUrl: input.url,
+      source: "youtube",
+    },
+    videoId: video.id,
+    userId,
+  });
+
+  return { video };
 }
 
 export async function confirmVideoUpload(
@@ -179,25 +303,7 @@ export async function confirmVideoUpload(
     userId,
   });
 
-  for (const resolution of config.TRANSCODING_RESOLUTIONS) {
-    await db
-      .insert(videoVariants)
-      .values({
-        videoId: video.id,
-        resolution: resolution as "480p" | "720p" | "1080p",
-        s3Bucket: config.S3_TRANSCODED_BUCKET,
-        s3Key: `transcoded/${video.id}/${resolution}.mp4`,
-        mimeType: "video/mp4",
-        status: "processing",
-      })
-      .onConflictDoUpdate({
-        target: [videoVariants.videoId, videoVariants.resolution],
-        set: {
-          status: "processing",
-          updatedAt: new Date(),
-        },
-      });
-  }
+  await createTranscodingVariants(db, config, video.id);
 
   return { video, job };
 }
@@ -488,10 +594,10 @@ export async function processTranscodingJob(
       .insert(videoVariants)
       .values({
         videoId: job.videoId,
-        resolution: resolution as "480p" | "720p" | "1080p",
+        resolution: resolution as TranscodingResolution,
         s3Bucket: config.S3_TRANSCODED_BUCKET,
-        s3Key: `transcoded/${job.videoId}/${resolution}.mp4`,
-        mimeType: "video/mp4",
+        s3Key: variantS3Key(job.videoId, resolution),
+        mimeType: variantMimeType(resolution),
         fileSizeBytes: 1_000_000,
         status: "ready",
       })

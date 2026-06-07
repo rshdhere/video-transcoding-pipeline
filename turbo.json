@@ -24,6 +24,11 @@
     "db:migrate": {
       "cache": false
     },
+    "db:studio": {
+      "cache": false,
+      "persistent": true,
+      "env": ["DATABASE_URL"]
+    },
     "test": {
       "dependsOn": ["^build"],
       "cache": false

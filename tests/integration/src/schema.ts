@@ -4,6 +4,8 @@ export const TRANSCODING_RESOLUTIONS = [
   "480p",
   "720p",
   "1080p",
+  "2160p",
+  "mp3",
 ] as const satisfies readonly string[];
 
 export type TranscodingResolution = (typeof TRANSCODING_RESOLUTIONS)[number];

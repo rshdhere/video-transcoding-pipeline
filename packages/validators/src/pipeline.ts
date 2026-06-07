@@ -8,8 +8,32 @@ export const uploadVideoSchema = z.object({
 
 export type UploadVideoInput = z.infer<typeof uploadVideoSchema>;
 
+const YOUTUBE_URL_PATTERN =
+  /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)[\w-]{11}(?:[?&][\w=%.-]*)?$/;
+
+export const importYouTubeVideoSchema = z.object({
+  url: z
+    .string()
+    .url()
+    .refine((value) => YOUTUBE_URL_PATTERN.test(value), {
+      message: "Must be a valid YouTube video URL",
+    }),
+});
+
+export type ImportYouTubeVideoInput = z.infer<typeof importYouTubeVideoSchema>;
+
+export const transcodingResolutionSchema = z.enum([
+  "480p",
+  "720p",
+  "1080p",
+  "2160p",
+  "mp3",
+]);
+
+export type TranscodingResolution = z.infer<typeof transcodingResolutionSchema>;
+
 export const downloadVideoSchema = z.object({
-  resolution: z.enum(["480p", "720p", "1080p"]),
+  resolution: transcodingResolutionSchema,
   idempotencyKey: z.string().min(1).optional(),
 });
 

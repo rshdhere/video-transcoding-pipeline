@@ -42,6 +42,10 @@ func (w *Worker) Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := ValidateYtDlp(ctx, w.cfg.YtDlpPath); err != nil {
+		return err
+	}
+
 	log.Printf("transcode worker listening on %s", w.cfg.SQSTranscodeURL)
 
 	for {
@@ -109,7 +113,7 @@ func (w *Worker) processNext(ctx context.Context) error {
 		return err
 	}
 
-	if !exists {
+	if !exists && video.SourceType != "youtube" {
 		return w.queue.Release(ctx, message.ReceiptHandle)
 	}
 
@@ -169,23 +173,79 @@ func (w *Worker) transcodeVideo(ctx context.Context, videoID string) error {
 	}
 
 	sourcePath := filepath.Join(workDir, "source"+sourceExt)
-	if err := w.s3.Download(ctx, video.S3Bucket, video.S3Key, sourcePath); err != nil {
+
+	if video.SourceType == "youtube" {
+		sourceURL := ""
+		if video.SourceURL != nil {
+			sourceURL = *video.SourceURL
+		}
+
+		if sourceURL == "" {
+			return fmt.Errorf("youtube import is missing sourceUrl")
+		}
+
+		if err := DownloadYouTube(ctx, w.cfg.YtDlpPath, sourceURL, sourcePath); err != nil {
+			return err
+		}
+
+		fileSize, err := storage.FileSize(sourcePath)
+		if err != nil {
+			return err
+		}
+
+		if err := w.s3.Upload(
+			ctx,
+			video.S3Bucket,
+			video.S3Key,
+			sourcePath,
+			video.MimeType,
+		); err != nil {
+			return fmt.Errorf("upload downloaded youtube video: %w", err)
+		}
+
+		if err := w.store.UpdateVideoAfterDownload(
+			ctx,
+			videoID,
+			filepath.Base(video.S3Key),
+			fileSize,
+		); err != nil {
+			return err
+		}
+	} else if err := w.s3.Download(ctx, video.S3Bucket, video.S3Key, sourcePath); err != nil {
 		return fmt.Errorf("download source video: %w", err)
 	}
 
 	for _, resolution := range w.cfg.TranscodingResolutions {
-		outputPath := filepath.Join(workDir, resolution+".mp4")
-		if err := Transcode(ctx, w.cfg.FFmpegPath, sourcePath, outputPath, resolution); err != nil {
-			return err
+		var (
+			outputPath string
+			outputKey  string
+			mimeType   string
+		)
+
+		if resolution == "mp3" {
+			outputPath = filepath.Join(workDir, resolution+".mp3")
+			if err := ExtractAudio(ctx, w.cfg.FFmpegPath, sourcePath, outputPath); err != nil {
+				return err
+			}
+
+			outputKey = fmt.Sprintf("transcoded/%s/%s.mp3", videoID, resolution)
+			mimeType = "audio/mpeg"
+		} else {
+			outputPath = filepath.Join(workDir, resolution+".mp4")
+			if err := Transcode(ctx, w.cfg.FFmpegPath, sourcePath, outputPath, resolution); err != nil {
+				return err
+			}
+
+			outputKey = fmt.Sprintf("transcoded/%s/%s.mp4", videoID, resolution)
+			mimeType = "video/mp4"
 		}
 
-		outputKey := fmt.Sprintf("transcoded/%s/%s.mp4", videoID, resolution)
 		if err := w.s3.Upload(
 			ctx,
 			w.cfg.S3TranscodedBucket,
 			outputKey,
 			outputPath,
-			"video/mp4",
+			mimeType,
 		); err != nil {
 			return fmt.Errorf("upload %s variant: %w", resolution, err)
 		}
@@ -201,7 +261,7 @@ func (w *Worker) transcodeVideo(ctx context.Context, videoID string) error {
 			resolution,
 			w.cfg.S3TranscodedBucket,
 			outputKey,
-			"video/mp4",
+			mimeType,
 			size,
 		); err != nil {
 			return err

@@ -33,5 +33,7 @@ type Video struct {
 	S3Bucket   string
 	S3Key      string
 	MimeType   string
+	SourceType string
+	SourceURL  *string
 	Status     string
 }

@@ -9,7 +9,8 @@
     "check-types": "turbo run check-types",
     "test:integration": "turbo run test --filter=@vtp/integration",
     "db:generate": "turbo run db:generate --filter=@vtp/drizzle",
-    "db:migrate": "turbo run db:migrate --filter=@vtp/drizzle"
+    "db:migrate": "turbo run db:migrate --filter=@vtp/drizzle",
+    "db:studio": "turbo run db:studio --filter=@vtp/drizzle"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

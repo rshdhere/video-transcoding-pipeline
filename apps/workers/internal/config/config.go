@@ -26,6 +26,7 @@ type Config struct {
 
 	TranscodingResolutions []string
 	FFmpegPath             string
+	YtDlpPath              string
 	TempDir                string
 	MaxConcurrentPolls     int
 
@@ -54,8 +55,9 @@ func Load() Config {
 		SQSTranscodeURL:    envString("SQS_TRANSCODING_QUEUE_URL", ""),
 		SQSEmailURL:        envString("SQS_EMAIL_VERIFICATION_QUEUE_URL", ""),
 
-		TranscodingResolutions: envCSV("TRANSCODING_RESOLUTIONS", []string{"480p", "720p", "1080p"}),
+		TranscodingResolutions: envCSV("TRANSCODING_RESOLUTIONS", []string{"480p", "720p", "1080p", "2160p", "mp3"}),
 		FFmpegPath:             envString("FFMPEG_PATH", "ffmpeg"),
+		YtDlpPath:              envString("YTDLP_PATH", "yt-dlp"),
 		TempDir:                envString("WORKERS_TEMP_DIR", ""),
 		MaxConcurrentPolls:     envInt("WORKERS_MAX_CONCURRENT_POLLS", 3),
 

@@ -16,6 +16,7 @@ import { user } from "./auth.ts";
 export const videoMimeTypeEnum = pgEnum("video_mime_type", [
   "video/mp4",
   "video/webm",
+  "audio/mpeg",
 ]);
 
 export const videoStatusEnum = pgEnum("video_status", [
@@ -25,10 +26,17 @@ export const videoStatusEnum = pgEnum("video_status", [
   "failed",
 ]);
 
+export const videoSourceTypeEnum = pgEnum("video_source_type", [
+  "upload",
+  "youtube",
+]);
+
 export const transcodingResolutionEnum = pgEnum("transcoding_resolution", [
   "480p",
   "720p",
   "1080p",
+  "2160p",
+  "mp3",
 ]);
 
 export const variantStatusEnum = pgEnum("variant_status", [
@@ -65,6 +73,10 @@ export const videos = pgTable(
     s3Bucket: text("s3_bucket").notNull(),
     s3Key: text("s3_key").notNull(),
     fileSizeBytes: bigint("file_size_bytes", { mode: "number" }).notNull(),
+    sourceType: videoSourceTypeEnum("source_type")
+      .notNull()
+      .default("upload"),
+    sourceUrl: text("source_url"),
     status: videoStatusEnum("status").notNull().default("uploaded"),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())

@@ -7,6 +7,7 @@ export {
 } from "./download.ts";
 export { createQueuePopHandler, createQueuePushHandler } from "./queue.ts";
 export { createUploadHandler } from "./upload.ts";
+export { createImportYouTubeHandler } from "./import-video.ts";
 export { createConfirmUploadHandler } from "./confirm-upload.ts";
 export { createListVideosHandler } from "./list-videos.ts";
 export {
