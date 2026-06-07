@@ -1,0 +1,15 @@
+.git
+**/.next
+**/node_modules
+**/.turbo
+**/dist
+apps/workers/bin
+tests/**
+!tests/integration/package.json
+!tests/e2e/package.json
+docs
+*.md
+.env
+.env.*
+**/.env.local
+!.env.example
