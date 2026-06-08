@@ -1,0 +1,116 @@
+name: Deploy to ECR
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - docker/**
+      - apps/**
+      - packages/**
+
+env:
+  AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: "591446361969"
+  ECR_REGISTRY: 591446361969.dkr.ecr.ap-south-1.amazonaws.com
+  ECS_CLUSTER: vtp-prod
+  DOMAIN_NAME: ${{ vars.DOMAIN_NAME || 'raashed.cloud' }}
+
+jobs:
+  build-push:
+    name: Build and push ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - service: api
+            dockerfile: docker/server/Dockerfile
+            ecr_repository: vtp-api
+          - service: worker
+            dockerfile: docker/worker/Dockerfile
+            ecr_repository: vtp-worker
+          - service: web
+            dockerfile: docker/web/Dockerfile
+            ecr_repository: vtp-web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        if: matrix.service != 'web'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ matrix.ecr_repository }}:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ matrix.ecr_repository }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      - name: Build and push web image
+        if: matrix.service == 'web'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ matrix.ecr_repository }}:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ matrix.ecr_repository }}:latest
+          build-args: |
+            API_URL=https://api.${{ env.DOMAIN_NAME }}
+            NEXT_PUBLIC_APP_URL=https://app.${{ env.DOMAIN_NAME }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  deploy-ecs:
+    name: Roll ECS services
+    runs-on: ubuntu-latest
+    needs: build-push
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force new ECS deployments
+        run: |
+          set -euo pipefail
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service vtp-prod-api \
+            --force-new-deployment
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service vtp-prod-worker \
+            --force-new-deployment
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service vtp-prod-web \
+            --force-new-deployment

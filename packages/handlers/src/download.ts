@@ -11,6 +11,7 @@ import {
   type AuthenticatedRequest,
 } from "./middleware/session.ts";
 import { handlePipelineError } from "./errors.ts";
+import { resolveAssetUrl, resolveThumbnailUrl } from "./services/assets.ts";
 import {
   createVideoDownload,
   listVideoVariants,
@@ -79,7 +80,24 @@ export function createVideoVariantsHandler(auth: Auth, config: Config) {
           return;
         }
 
-        res.status(200).json({ variants });
+        const enrichedVariants = await Promise.all(
+          variants.map(async (variant) => ({
+            ...variant,
+            streamUrl:
+              variant.status === "ready"
+                ? await resolveAssetUrl(
+                    config,
+                    variant.s3Bucket,
+                    variant.s3Key,
+                  )
+                : null,
+          })),
+        );
+
+        res.status(200).json({
+          variants: enrichedVariants,
+          thumbnailUrl: await resolveThumbnailUrl(config, video),
+        });
       } catch (error) {
         handlePipelineError(res, error);
       }

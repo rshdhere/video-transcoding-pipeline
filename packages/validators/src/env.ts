@@ -43,6 +43,7 @@ export const envSchema = z
       .transform((value) => value === "true"),
     S3_UPLOAD_BUCKET: z.string().default("vtp-uploads"),
     S3_TRANSCODED_BUCKET: z.string().default("vtp-transcoded"),
+    CLOUDFRONT_DOMAIN: z.string().optional(),
     UPLOAD_PRESIGNED_URL_EXPIRES_SECONDS: z.coerce
       .number()
       .int()

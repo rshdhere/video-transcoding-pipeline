@@ -56,6 +56,7 @@ export function VideosTable({ videos }: { videos: Video[] }) {
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>Preview</TableHead>
           <TableHead>File</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Size</TableHead>
@@ -66,6 +67,19 @@ export function VideosTable({ videos }: { videos: Video[] }) {
       <TableBody>
         {videos.map((video) => (
           <TableRow key={video.id}>
+            <TableCell>
+              {video.thumbnailUrl ? (
+                <img
+                  src={video.thumbnailUrl}
+                  alt=""
+                  className="h-12 w-20 rounded object-cover"
+                />
+              ) : (
+                <div className="flex h-12 w-20 items-center justify-center rounded bg-muted text-xs text-muted-foreground">
+                  No preview
+                </div>
+              )}
+            </TableCell>
             <TableCell className="font-medium">{video.originalFileName}</TableCell>
             <TableCell>
               <VideoStatusBadge status={video.status} />

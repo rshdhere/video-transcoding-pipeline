@@ -17,6 +17,7 @@ export const videoMimeTypeEnum = pgEnum("video_mime_type", [
   "video/mp4",
   "video/webm",
   "audio/mpeg",
+  "application/vnd.apple.mpegurl",
 ]);
 
 export const videoStatusEnum = pgEnum("video_status", [
@@ -78,6 +79,8 @@ export const videos = pgTable(
       .default("upload"),
     sourceUrl: text("source_url"),
     status: videoStatusEnum("status").notNull().default("uploaded"),
+    thumbnailS3Bucket: text("thumbnail_s3_bucket"),
+    thumbnailS3Key: text("thumbnail_s3_key"),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),

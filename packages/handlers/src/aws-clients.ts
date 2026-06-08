@@ -1,8 +1,4 @@
-import {
-  createDownloadPresignedUrl,
-  createS3Client,
-  createUploadPresignedUrl,
-} from "@vtp/aws";
+import { createS3Client, createUploadPresignedUrl } from "@vtp/aws";
 import type { Config } from "@vtp/config";
 import {
   createSqsClient,
@@ -73,23 +69,6 @@ export async function resolveUploadUrl(
     key,
     contentType,
     config.UPLOAD_PRESIGNED_URL_EXPIRES_SECONDS,
-  );
-}
-
-export async function resolveDownloadUrl(
-  config: Config,
-  bucket: string,
-  key: string,
-) {
-  if (!config.AWS_ENABLED) {
-    return `https://${bucket}.s3.amazonaws.com/${key}`;
-  }
-
-  return createDownloadPresignedUrl(
-    getS3Client(config),
-    bucket,
-    key,
-    config.DOWNLOAD_PRESIGNED_URL_EXPIRES_SECONDS,
   );
 }
 

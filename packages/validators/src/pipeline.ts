@@ -32,6 +32,28 @@ export const transcodingResolutionSchema = z.enum([
 
 export type TranscodingResolution = z.infer<typeof transcodingResolutionSchema>;
 
+export function variantS3Key(videoId: string, resolution: string): string {
+  if (resolution === "mp3") {
+    return `audio/${videoId}/audio.mp3`;
+  }
+
+  return `hls/${videoId}/${resolution}/playlist.m3u8`;
+}
+
+export function hlsMasterS3Key(videoId: string): string {
+  return `hls/${videoId}/master.m3u8`;
+}
+
+export function thumbnailS3Key(videoId: string): string {
+  return `thumbnails/${videoId}/poster.jpg`;
+}
+
+export function variantMimeType(
+  resolution: string,
+): "application/vnd.apple.mpegurl" | "audio/mpeg" {
+  return resolution === "mp3" ? "audio/mpeg" : "application/vnd.apple.mpegurl";
+}
+
 export const downloadVideoSchema = z.object({
   resolution: transcodingResolutionSchema,
   idempotencyKey: z.string().min(1).optional(),

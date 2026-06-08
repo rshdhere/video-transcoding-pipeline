@@ -7,11 +7,15 @@ export {
 } from "./auth.ts";
 export {
   downloadVideoSchema,
+  hlsMasterS3Key,
+  thumbnailS3Key,
   transcodingResolutionSchema,
   importYouTubeVideoSchema,
   queuePopSchema,
   queuePushSchema,
   uploadVideoSchema,
+  variantMimeType,
+  variantS3Key,
   workerProcessSchema,
   type DownloadVideoInput,
   type ImportYouTubeVideoInput,

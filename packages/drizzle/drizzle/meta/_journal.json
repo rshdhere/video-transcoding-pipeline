@@ -29,6 +29,13 @@
       "when": 1780650493254,
       "tag": "0003_4k_mp3_variants",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780650493255,
+      "tag": "0004_hls_thumbnails",
+      "breakpoints": true
     }
   ]
 }

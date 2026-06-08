@@ -27,6 +27,7 @@ type Config struct {
 	TranscodingResolutions []string
 	FFmpegPath             string
 	YtDlpPath              string
+	ThumbnailSeekSeconds   float64
 	TempDir                string
 	MaxConcurrentPolls     int
 
@@ -58,6 +59,7 @@ func Load() Config {
 		TranscodingResolutions: envCSV("TRANSCODING_RESOLUTIONS", []string{"480p", "720p", "1080p", "2160p", "mp3"}),
 		FFmpegPath:             envString("FFMPEG_PATH", "ffmpeg"),
 		YtDlpPath:              envString("YTDLP_PATH", "yt-dlp"),
+		ThumbnailSeekSeconds:   envFloat("THUMBNAIL_SEEK_SECONDS", 5),
 		TempDir:                envString("WORKERS_TEMP_DIR", ""),
 		MaxConcurrentPolls:     envInt("WORKERS_MAX_CONCURRENT_POLLS", 3),
 
@@ -98,6 +100,20 @@ func envInt(key string, fallback int) int {
 	}
 
 	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+
+	return parsed
+}
+
+func envFloat(key string, fallback float64) float64 {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return fallback
+	}
+
+	parsed, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		return fallback
 	}

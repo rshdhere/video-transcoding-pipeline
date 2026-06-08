@@ -13,6 +13,11 @@ import type {
   TranscodingResolution,
   UploadVideoInput,
 } from "@vtp/validators";
+import {
+  thumbnailS3Key,
+  variantMimeType,
+  variantS3Key,
+} from "@vtp/validators";
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
 import {
@@ -20,9 +25,9 @@ import {
   dequeueSqsJob,
   enqueueSqsJob,
   nackSqsJob,
-  resolveDownloadUrl,
   resolveUploadUrl,
 } from "../aws-clients.ts";
+import { resolveAssetUrl } from "./assets.ts";
 
 export class PipelineError extends Error {
   constructor(
@@ -40,17 +45,6 @@ const DOWNLOAD_BURST_LIMIT = 30;
 const SQS_POP_ATTEMPTS = 5;
 
 type JobType = "transcoding" | "email_verification";
-
-function variantMimeType(
-  resolution: string,
-): "video/mp4" | "audio/mpeg" {
-  return resolution === "mp3" ? "audio/mpeg" : "video/mp4";
-}
-
-function variantS3Key(videoId: string, resolution: string): string {
-  const extension = resolution === "mp3" ? "mp3" : "mp4";
-  return `transcoded/${videoId}/${resolution}.${extension}`;
-}
 
 function extractYouTubeVideoId(url: string): string | null {
   const patterns = [
@@ -359,7 +353,7 @@ export async function createVideoDownload(
       return {
         download: existing,
         variant,
-        downloadUrl: await resolveDownloadUrl(
+        downloadUrl: await resolveAssetUrl(
           config,
           variant.s3Bucket,
           variant.s3Key,
@@ -428,7 +422,7 @@ export async function createVideoDownload(
   return {
     download,
     variant,
-    downloadUrl: await resolveDownloadUrl(
+    downloadUrl: await resolveAssetUrl(
       config,
       variant.s3Bucket,
       variant.s3Key,
@@ -612,7 +606,12 @@ export async function processTranscodingJob(
 
   await db
     .update(videos)
-    .set({ status: "completed", updatedAt: new Date() })
+    .set({
+      status: "completed",
+      thumbnailS3Bucket: config.S3_TRANSCODED_BUCKET,
+      thumbnailS3Key: thumbnailS3Key(job.videoId),
+      updatedAt: new Date(),
+    })
     .where(eq(videos.id, job.videoId));
 
   const completedJob = await completeBackgroundJob(db, config, job.id);

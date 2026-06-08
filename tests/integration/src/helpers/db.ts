@@ -8,6 +8,7 @@ import {
 } from "@vtp/drizzle";
 import { eq } from "drizzle-orm";
 
+import { thumbnailS3Key, variantMimeType, variantS3Key } from "@vtp/validators";
 import { TRANSCODING_RESOLUTIONS } from "../schema.ts";
 import { testConfig } from "../setup.ts";
 
@@ -74,17 +75,24 @@ export async function seedReadyVideo(userId: string, label: string) {
   }
 
   for (const resolution of TRANSCODING_RESOLUTIONS) {
-    const extension = resolution === "mp3" ? "mp3" : "mp4";
     await db.insert(videoVariants).values({
       videoId: video.id,
       resolution,
       s3Bucket: testConfig.S3_TRANSCODED_BUCKET,
-      s3Key: `seed/${video.id}/${resolution}.${extension}`,
-      mimeType: resolution === "mp3" ? "audio/mpeg" : "video/mp4",
+      s3Key: variantS3Key(video.id, resolution),
+      mimeType: variantMimeType(resolution),
       fileSizeBytes: 1_000_000,
       status: "ready",
     });
   }
+
+  await db
+    .update(videos)
+    .set({
+      thumbnailS3Bucket: testConfig.S3_TRANSCODED_BUCKET,
+      thumbnailS3Key: thumbnailS3Key(video.id),
+    })
+    .where(eq(videos.id, video.id));
 
   return video.id;
 }

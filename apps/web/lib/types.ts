@@ -15,6 +15,9 @@ export type Video = {
   sourceType: "upload" | "youtube";
   sourceUrl: string | null;
   status: VideoStatus;
+  thumbnailS3Bucket: string | null;
+  thumbnailS3Key: string | null;
+  thumbnailUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -25,9 +28,14 @@ export type VideoVariant = {
   resolution: Resolution;
   s3Bucket: string;
   s3Key: string;
-  mimeType: "video/mp4" | "video/webm" | "audio/mpeg";
+  mimeType:
+    | "video/mp4"
+    | "video/webm"
+    | "audio/mpeg"
+    | "application/vnd.apple.mpegurl";
   fileSizeBytes: number | null;
   status: VariantStatus;
+  streamUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 };

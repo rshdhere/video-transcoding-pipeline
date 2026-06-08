@@ -6,7 +6,7 @@ Background workers for the video transcoding pipeline. They consume SQS jobs, up
 
 | Worker | Queue | Responsibilities |
 |--------|-------|------------------|
-| Transcode | `SQS_TRANSCODING_QUEUE_URL` | Download raw upload from S3, ffmpeg transcode to 480p/720p/1080p, upload outputs, update `videos` and `video_variants` |
+| Transcode | `SQS_TRANSCODING_QUEUE_URL` | Download raw upload from S3, ffmpeg package HLS renditions (480p/720p/1080p), extract poster at 00:00:05, upload to S3, update `videos` and `video_variants` |
 | Email | `SQS_EMAIL_VERIFICATION_QUEUE_URL` | Send verification email via Resend, complete `background_jobs` row |
 
 ## Run
@@ -42,7 +42,8 @@ Copy `.env.example` to `.env` in this directory before starting the workers alon
 ```text
 API push -> Postgres background_jobs + SQS message
 Go worker -> SQS receive -> lock job in Postgres
-Transcode worker -> S3 download -> ffmpeg -> S3 upload -> Postgres variants
+Transcode worker -> S3 download -> ffmpeg HLS + 0:05 JPEG -> S3 upload -> Postgres variants
+CloudFront (external) -> serves HLS + thumbnails to web clients
 Email worker -> Resend API -> Postgres job complete
 SQS delete on success
 ```

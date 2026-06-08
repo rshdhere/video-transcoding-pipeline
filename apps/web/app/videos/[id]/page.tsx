@@ -32,6 +32,7 @@ export default function VideoDetailPage({
   const { id } = use(params);
   const [video, setVideo] = useState<Video | null>(null);
   const [variants, setVariants] = useState<VideoVariant[]>([]);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +55,7 @@ export default function VideoDetailPage({
 
       setVideo(currentVideo);
       setVariants(variantsResponse.variants);
+      setThumbnailUrl(variantsResponse.thumbnailUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load video");
     } finally {
@@ -108,13 +110,22 @@ export default function VideoDetailPage({
         ) : video ? (
           <>
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight">
-                  {video.originalFileName}
-                </h1>
-                <p className="mt-2 text-muted-foreground">
-                  {formatBytes(video.fileSizeBytes)} · {video.mimeType}
-                </p>
+              <div className="flex min-w-0 flex-1 items-start gap-4">
+                {thumbnailUrl ? (
+                  <img
+                    src={thumbnailUrl}
+                    alt=""
+                    className="h-24 w-40 shrink-0 rounded-md object-cover"
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <h1 className="text-3xl font-semibold tracking-tight">
+                    {video.originalFileName}
+                  </h1>
+                  <p className="mt-2 text-muted-foreground">
+                    {formatBytes(video.fileSizeBytes)} · {video.mimeType}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <VideoStatusBadge status={video.status} />
@@ -129,12 +140,16 @@ export default function VideoDetailPage({
               <CardHeader>
                 <CardTitle>Transcoded variants</CardTitle>
                 <CardDescription>
-                  Watch 480p through 4K outputs inline, or play and download the
-                  MP3 audio extract once they are ready.
+                  Stream adaptive HLS renditions from 480p through 4K, or play and
+                  download the MP3 audio extract once they are ready.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <VariantPlayers videoId={video.id} variants={variants} />
+                <VariantPlayers
+                  videoId={video.id}
+                  variants={variants}
+                  thumbnailUrl={thumbnailUrl}
+                />
               </CardContent>
             </Card>
           </>

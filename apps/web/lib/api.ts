@@ -56,7 +56,7 @@ export async function importYouTubeVideo(url: string) {
 }
 
 export async function getVideoVariants(videoId: string) {
-  return apiFetch<{ variants: VideoVariant[] }>(
+  return apiFetch<{ variants: VideoVariant[]; thumbnailUrl: string | null }>(
     `/api/v1/videos/${videoId}/variants`,
   );
 }

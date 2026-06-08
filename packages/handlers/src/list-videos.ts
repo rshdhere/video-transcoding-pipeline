@@ -10,6 +10,7 @@ import {
   type AuthenticatedRequest,
 } from "./middleware/session.ts";
 import { handlePipelineError } from "./errors.ts";
+import { resolveThumbnailUrl } from "./services/assets.ts";
 
 export function createListVideosHandler(auth: Auth, config: Config) {
   const requireSession = createRequireSession(auth);
@@ -26,7 +27,14 @@ export function createListVideosHandler(auth: Auth, config: Config) {
           .where(eq(videos.userId, session.user.id))
           .orderBy(desc(videos.createdAt));
 
-        res.status(200).json({ videos: items });
+        const enrichedVideos = await Promise.all(
+          items.map(async (video) => ({
+            ...video,
+            thumbnailUrl: await resolveThumbnailUrl(config, video),
+          })),
+        );
+
+        res.status(200).json({ videos: enrichedVideos });
       } catch (error) {
         handlePipelineError(res, error);
       }

@@ -215,58 +215,143 @@ func (w *Worker) transcodeVideo(ctx context.Context, videoID string) error {
 		return fmt.Errorf("download source video: %w", err)
 	}
 
-	for _, resolution := range w.cfg.TranscodingResolutions {
-		var (
-			outputPath string
-			outputKey  string
-			mimeType   string
-		)
+	posterPath := filepath.Join(workDir, "poster.jpg")
+	if err := ExtractThumbnail(
+		ctx,
+		w.cfg.FFmpegPath,
+		sourcePath,
+		posterPath,
+		w.cfg.ThumbnailSeekSeconds,
+	); err != nil {
+		return err
+	}
 
+	thumbnailKey := fmt.Sprintf("thumbnails/%s/poster.jpg", videoID)
+	if err := w.s3.Upload(
+		ctx,
+		w.cfg.S3TranscodedBucket,
+		thumbnailKey,
+		posterPath,
+		"image/jpeg",
+	); err != nil {
+		return fmt.Errorf("upload thumbnail: %w", err)
+	}
+
+	if err := w.store.UpdateVideoThumbnail(
+		ctx,
+		videoID,
+		w.cfg.S3TranscodedBucket,
+		thumbnailKey,
+	); err != nil {
+		return err
+	}
+
+	var videoResolutions []string
+
+	for _, resolution := range w.cfg.TranscodingResolutions {
 		if resolution == "mp3" {
-			outputPath = filepath.Join(workDir, resolution+".mp3")
+			continue
+		}
+
+		videoResolutions = append(videoResolutions, resolution)
+	}
+
+	hlsRoot := filepath.Join(workDir, "hls")
+
+	for _, resolution := range w.cfg.TranscodingResolutions {
+		if resolution == "mp3" {
+			outputPath := filepath.Join(workDir, resolution+".mp3")
 			if err := ExtractAudio(ctx, w.cfg.FFmpegPath, sourcePath, outputPath); err != nil {
 				return err
 			}
 
-			outputKey = fmt.Sprintf("transcoded/%s/%s.mp3", videoID, resolution)
-			mimeType = "audio/mpeg"
-		} else {
-			outputPath = filepath.Join(workDir, resolution+".mp4")
-			if err := Transcode(ctx, w.cfg.FFmpegPath, sourcePath, outputPath, resolution); err != nil {
+			outputKey := fmt.Sprintf("audio/%s/audio.mp3", videoID)
+			if err := w.s3.Upload(
+				ctx,
+				w.cfg.S3TranscodedBucket,
+				outputKey,
+				outputPath,
+				"audio/mpeg",
+			); err != nil {
+				return fmt.Errorf("upload %s variant: %w", resolution, err)
+			}
+
+			size, err := storage.FileSize(outputPath)
+			if err != nil {
 				return err
 			}
 
-			outputKey = fmt.Sprintf("transcoded/%s/%s.mp4", videoID, resolution)
-			mimeType = "video/mp4"
+			if err := w.store.UpsertVariant(
+				ctx,
+				videoID,
+				resolution,
+				w.cfg.S3TranscodedBucket,
+				outputKey,
+				"audio/mpeg",
+				size,
+			); err != nil {
+				return err
+			}
+
+			continue
 		}
 
-		if err := w.s3.Upload(
+		outputDir := filepath.Join(hlsRoot, resolution)
+		if err := TranscodeHLS(
+			ctx,
+			w.cfg.FFmpegPath,
+			sourcePath,
+			outputDir,
+			resolution,
+		); err != nil {
+			return err
+		}
+
+		prefix := fmt.Sprintf("hls/%s/%s", videoID, resolution)
+		if err := w.s3.UploadDirectory(
 			ctx,
 			w.cfg.S3TranscodedBucket,
-			outputKey,
-			outputPath,
-			mimeType,
+			prefix,
+			outputDir,
 		); err != nil {
-			return fmt.Errorf("upload %s variant: %w", resolution, err)
+			return fmt.Errorf("upload %s hls variant: %w", resolution, err)
 		}
 
-		size, err := storage.FileSize(outputPath)
+		size, err := DirectorySize(outputDir)
 		if err != nil {
 			return err
 		}
 
+		outputKey := fmt.Sprintf("%s/playlist.m3u8", prefix)
 		if err := w.store.UpsertVariant(
 			ctx,
 			videoID,
 			resolution,
 			w.cfg.S3TranscodedBucket,
 			outputKey,
-			mimeType,
+			"application/vnd.apple.mpegurl",
 			size,
 		); err != nil {
 			return err
 		}
+	}
 
+	if len(videoResolutions) > 0 {
+		masterPath := filepath.Join(hlsRoot, "master.m3u8")
+		if err := WriteMasterPlaylist(masterPath, videoResolutions); err != nil {
+			return err
+		}
+
+		masterKey := fmt.Sprintf("hls/%s/master.m3u8", videoID)
+		if err := w.s3.Upload(
+			ctx,
+			w.cfg.S3TranscodedBucket,
+			masterKey,
+			masterPath,
+			"application/vnd.apple.mpegurl",
+		); err != nil {
+			return fmt.Errorf("upload master playlist: %w", err)
+		}
 	}
 
 	if err := w.store.UpdateVideoStatus(ctx, videoID, "completed"); err != nil {

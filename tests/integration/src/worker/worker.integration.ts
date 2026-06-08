@@ -12,6 +12,7 @@ import {
   type TestAgent,
 } from "../helpers/auth.ts";
 import { db, getVariantsForVideo, resetPipelineTables } from "../helpers/db.ts";
+import { TRANSCODING_RESOLUTIONS } from "../schema.ts";
 
 describe("worker tests", () => {
   let token: string;
@@ -183,6 +184,6 @@ describe("worker tests", () => {
     expect(job?.completedAt).toBeDefined();
 
     const variants = await getVariantsForVideo(videoId);
-    expect(variants).toHaveLength(3);
+    expect(variants).toHaveLength(TRANSCODING_RESOLUTIONS.length);
   });
 });

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"io/fs"
 	"context"
 	"errors"
 	"fmt"
@@ -91,6 +92,44 @@ func (c *Client) Upload(ctx context.Context, bucket, key, sourcePath, contentTyp
 	})
 
 	return err
+}
+
+func contentTypeForPath(path string) string {
+	switch filepath.Ext(path) {
+	case ".m3u8":
+		return "application/vnd.apple.mpegurl"
+	case ".ts":
+		return "video/mp2t"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".mp3":
+		return "audio/mpeg"
+	case ".mp4":
+		return "video/mp4"
+	default:
+		return "application/octet-stream"
+	}
+}
+
+func (c *Client) UploadDirectory(ctx context.Context, bucket, prefix, dir string) error {
+	return filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if entry.IsDir() {
+			return nil
+		}
+
+		rel, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+
+		key := filepath.ToSlash(filepath.Join(prefix, rel))
+
+		return c.Upload(ctx, bucket, key, path, contentTypeForPath(path))
+	})
 }
 
 func isS3NotFound(err error) bool {

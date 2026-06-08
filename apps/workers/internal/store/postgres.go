@@ -195,6 +195,24 @@ func (s *Postgres) UpsertVariant(
 	return err
 }
 
+func (s *Postgres) UpdateVideoThumbnail(
+	ctx context.Context,
+	videoID string,
+	bucket string,
+	key string,
+) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE videos
+		SET
+			thumbnail_s3_bucket = $2,
+			thumbnail_s3_key = $3,
+			updated_at = NOW()
+		WHERE id = $1
+	`, videoID, bucket, key)
+
+	return err
+}
+
 func scanJob(row pgx.Row) (*job.Record, error) {
 	var record job.Record
 	var userID *string
